@@ -20,37 +20,38 @@ Tanoshi features an advanced AI narration system that transforms manga reading i
 ```mermaid
 flowchart TD
   A[User opens chapter/page] --> B{Is structured text available?}
-  B -- Yes --> C[Use structured text parser]
-  B -- No  --> D[Run OCR (Vision/Tesseract)]
+  B -->|Yes| C[Use structured text parser]
+  B -->|No| D[Run OCR Vision/Tesseract]
   D --> C
   C --> E[Text segmentation: narration / dialogue / SFX cues]
-  E --> F[Speaker assignment (heuristics/ML)]
+  E --> F[Speaker assignment heuristics/ML]
   F --> G[Generate SSML per-utterance]
   G --> H{Voice type?}
-  H -- On-device --> I[AVSpeechSynthesizer -> Audio Pipeline]
-  H -- Cloud --> J[Cloud TTS (stream) -> Audio Pipeline]
-  I & J --> K[SFX Manager -> Mixer]
-  K --> L[Audio Playbook / Panel Highlighting (sync)]
-  L --> M[Cache audio metadata & files]
+  H -->|On-device| I[AVSpeechSynthesizer Audio Pipeline]
+  H -->|Cloud| J[Cloud TTS stream Audio Pipeline]
+  I --> K[SFX Manager Mixer]
+  J --> K
+  K --> L[Audio Playback Panel Highlighting sync]
+  L --> M[Cache audio metadata files]
   M --> N[User controls: pause/seek/voice settings]
 ```
 
 ### System design component diagram
 ```mermaid
 graph LR
-  subgraph Device (Tanoshi iPad/iPhone)
+  subgraph Device["Tanoshi iPad/iPhone"]
     UI[UI: Reader + Narration Controls]
     OCR[OCR: Vision / Tesseract]
     Parser[Text Parser & Segmentation]
-    SpeakerID[Speaker Attribution (Heuristics/CoreML)]
+    SpeakerID[Speaker Attribution Heuristics/CoreML]
     TTS_local[AVSpeechSynthesizer Adapter]
     AudioMgr[Audio Manager & Mixer]
     Cache[Local Cache: Audio files & metadata]
     Sync[Sync: Highlighting & timestamps]
   end
 
-  subgraph Optional Cloud
-    TTS_cloud[Cloud TTS (OpenAI/Google/AWS)]
+  subgraph Cloud["Optional Cloud"]
+    TTS_cloud[Cloud TTS OpenAI/Google/AWS]
     MLService[Optional ML Inference Server]
     Storage[Cloud caching / S3]
   end
