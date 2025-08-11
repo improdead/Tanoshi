@@ -11,16 +11,16 @@ struct CloseButton: View {
     let action: () -> Void
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            // ios 26 doesn't have a special close button style
-            Button {
-                action()
-            } label: {
-                Image(systemName: "xmark")
-            }
-        } else {
-            CloseButtonUIKit(action: action)
-        }
+//        if #available(iOS 26.0, *) {
+//            // ios 26 doesn't have a special close button style
+//            Button {
+//                action()
+//            } label: {
+//                Image(systemName: "xmark")
+//            }
+//        } else {
+        CloseButtonUIKit(action: action)
+//        }
     }
 }
 

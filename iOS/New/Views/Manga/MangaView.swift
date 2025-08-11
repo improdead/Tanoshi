@@ -114,16 +114,16 @@ struct MangaView: View {
                 UIView.animate(withDuration: 0.3) {
                     navigationController.isToolbarHidden = false
                     navigationController.toolbar.alpha = 1
-                    if #available(iOS 26.0, *) {
-                        navigationController.tabBarController?.isTabBarHidden = true
-                    }
+//                    if #available(iOS 26.0, *) {
+//                        navigationController.tabBarController?.isTabBarHidden = true
+//                    }
                 }
             } else {
                 UIView.animate(withDuration: 0.3) {
                     navigationController.toolbar.alpha = 0
-                    if #available(iOS 26.0, *) {
-                        navigationController.tabBarController?.isTabBarHidden = false
-                    }
+//                    if #available(iOS 26.0, *) {
+//                        navigationController.tabBarController?.isTabBarHidden = false
+//                    }
                 } completion: { _ in
                     navigationController.isToolbarHidden = true
                 }
@@ -147,23 +147,23 @@ struct MangaView: View {
         }
         .environment(\.editMode, $editMode)
 
-        if #available(iOS 26.0, *) {
-            list
-                .toolbar {
-                    toolbarContentiOS26
-                }
-        } else {
-            list
-                .toolbar {
-                    toolbarContentBase
+//        if #available(iOS 26.0, *) {
+//            list
+//                .toolbar {
+//                    toolbarContentiOS26
+//                }
+//        } else {
+        list
+            .toolbar {
+                toolbarContentBase
 
-                    ToolbarItemGroup(placement: .bottomBar) {
-                        if editMode == .active {
-                            toolbar
-                        }
+                ToolbarItemGroup(placement: .bottomBar) {
+                    if editMode == .active {
+                        toolbar
                     }
                 }
-        }
+            }
+//        }
     }
 }
 
@@ -487,25 +487,25 @@ extension MangaView {
         }
     }
 
-    @available(iOS 26.0, *)
-    @ToolbarContentBuilder
-    var toolbarContentiOS26: some ToolbarContent {
-        toolbarContentBase
-
-        if editMode == .active {
-            ToolbarItem(placement: .bottomBar) {
-                toolbarMarkMenu
-            }
-
-            ToolbarSpacer(.flexible, placement: .bottomBar)
-
-            if !viewModel.manga.isLocal() {
-                ToolbarItem(placement: .bottomBar) {
-                    toolbarDownloadButton
-                }
-            }
-        }
-    }
+//    @available(iOS 26.0, *)
+//    @ToolbarContentBuilder
+//    var toolbarContentiOS26: some ToolbarContent {
+//        toolbarContentBase
+//
+//        if editMode == .active {
+//            ToolbarItem(placement: .bottomBar) {
+//                toolbarMarkMenu
+//            }
+//
+//            ToolbarSpacer(.flexible, placement: .bottomBar)
+//
+//            if !viewModel.manga.isLocal() {
+//                ToolbarItem(placement: .bottomBar) {
+//                    toolbarDownloadButton
+//                }
+//            }
+//        }
+//    }
 
     var toolbar: some View {
         HStack {

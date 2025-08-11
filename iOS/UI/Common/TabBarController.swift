@@ -27,7 +27,7 @@ class TabBarController: UITabBarController {
         searchViewController.navigationBar.prefersLargeTitles = true
         settingsViewController.navigationBar.prefersLargeTitles = true
 
-        if #available(iOS 26.0, *) {
+//        if #available(iOS 26.0, *) {
 //            let searchTab = UISearchTab { _ in
 //                searchViewController
 //            }
@@ -63,7 +63,7 @@ class TabBarController: UITabBarController {
 //                },
 //                searchTab
 //            ]
-        } else {
+//        } else {
             libraryViewController.tabBarItem = UITabBarItem(
                 title: NSLocalizedString("LIBRARY", comment: ""),
                 image: UIImage(systemName: "books.vertical.fill"),
@@ -94,7 +94,7 @@ class TabBarController: UITabBarController {
                 searchViewController,
                 settingsViewController
             ]
-        }
+//        }
 
         let updateCount = UserDefaults.standard.integer(forKey: "Browse.updateCount")
         browseViewController.tabBarItem.badgeValue = updateCount > 0 ? String(updateCount) : nil

@@ -292,8 +292,8 @@ class NewSourceViewController: UIViewController {
                 listingHeaderController.view.clipsToBounds = false
                 searchBar.addSubview(listingHeaderController.view)
 
-                // this superview keeps setting clipsToBounds to true, which messes up the shadow on ios 26
-                listingHeaderController.view.superview?.forceNoClip()
+            // this superview keeps setting clipsToBounds to true, which messes up the shadow on ios 26
+//            listingHeaderController.view.superview?.forceNoClip()
             } else {
                 navigationItem.searchController = nil
 //                searchController.isActive = false
@@ -709,10 +709,10 @@ extension NewSourceViewController {
 
     // toggles the navigation bar background to opaque or transparent
     private func setNavigationBarOpaque(_ opaque: Bool) {
-        if #available(iOS 26.0, *) {
-            // navigation bar should remain clear on ios 26
-            return
-        }
+//        if #available(iOS 26.0, *) {
+//            // navigation bar should remain clear on ios 26
+//            return
+//        }
 
         guard
             !onlySearch,

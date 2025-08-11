@@ -100,22 +100,22 @@ struct ListingsHeaderView: View {
                             .font(.footnote.weight(.medium))
                             .foregroundStyle(active ? Color.white : Color.primary)
 
-                        if #available(iOS 26.0, *) {
-                            label
-                                .glassEffect(active ? .regular.tint(.accentColor) : .regular)
-                        } else {
-                            label
-                                .background(
-                                    RoundedRectangle(cornerRadius: 100)
-                                        .fill(
-                                            Color(
-                                                uiColor: active
-                                                    ? .tintColor
-                                                    : .secondarySystemFill
-                                            )
+//                        if #available(iOS 26.0, *) {
+//                            label
+//                                .glassEffect(active ? .regular.tint(.accentColor) : .regular)
+//                        } else {
+                        label
+                            .background(
+                                RoundedRectangle(cornerRadius: 100)
+                                    .fill(
+                                        Color(
+                                            uiColor: active
+                                                ? .tintColor
+                                                : .secondarySystemFill
                                         )
-                                )
-                        }
+                                    )
+                            )
+//                        }
                     }
                 }
             }

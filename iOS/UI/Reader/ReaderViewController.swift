@@ -160,13 +160,13 @@ class ReaderViewController: BaseObservingViewController {
         let toolbarButtonItemView = UIBarButtonItem(customView: toolbarView)
         toolbarButtonItemView.customView?.transform = CGAffineTransform(translationX: 0, y: -10)
         toolbarButtonItemView.customView?.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        if #available(iOS 26.0, *) {
-            toolbarViewWidthConstraint = toolbarButtonItemView.customView?.widthAnchor.constraint(
-                equalToConstant: node.bounds.width - 32 - 10
-            )
-        } else {
-            toolbarViewWidthConstraint = toolbarButtonItemView.customView?.widthAnchor.constraint(equalToConstant: view.bounds.width)
-        }
+//        if #available(iOS 26.0, *) {
+//            toolbarViewWidthConstraint = toolbarButtonItemView.customView?.widthAnchor.constraint(
+//                equalToConstant: node.bounds.width - 32 - 10
+//            )
+//        } else {
+        toolbarViewWidthConstraint = toolbarButtonItemView.customView?.widthAnchor.constraint(equalToConstant: view.bounds.width)
+//        }
 
         add(child: descriptionButtonController)
 
@@ -261,11 +261,11 @@ class ReaderViewController: BaseObservingViewController {
         super.viewWillTransition(to: size, with: coordinator)
 
         coordinator.animate(alongsideTransition: nil) { _ in
-            if #available(iOS 26.0, *) {
-                self.toolbarViewWidthConstraint?.constant = size.width - 32 - 10
-            } else {
-                self.toolbarViewWidthConstraint?.constant = size.width
-            }
+//            if #available(iOS 26.0, *) {
+//                self.toolbarViewWidthConstraint?.constant = size.width - 32 - 10
+//            } else {
+            self.toolbarViewWidthConstraint?.constant = size.width
+//            }
         }
     }
 
@@ -734,25 +734,25 @@ extension ReaderViewController {
             self.setNeedsUpdateOfHomeIndicatorAutoHidden()
         } completion: { _ in
             UIView.setAnimationsEnabled(false)
-            if #available(iOS 26.0, *) {
-                if navigationController.isToolbarHidden {
-                    (navigationController.value(forKey: "_floatingBarContainerView") as? UIView)?.alpha = 0
-                    navigationController.isToolbarHidden = false
-                }
-            } else {
-                if navigationController.toolbar.isHidden {
-                    navigationController.toolbar.alpha = 0
-                    navigationController.toolbar.isHidden = false
-                }
+//            if #available(iOS 26.0, *) {
+//                if navigationController.isToolbarHidden {
+//                    (navigationController.value(forKey: "_floatingBarContainerView") as? UIView)?.alpha = 0
+//                    navigationController.isToolbarHidden = false
+//                }
+//            } else {
+            if navigationController.toolbar.isHidden {
+                navigationController.toolbar.alpha = 0
+                navigationController.toolbar.isHidden = false
             }
+//            }
             self.pageDescriptionButtonBottomConstraint.constant = 0
             UIView.setAnimationsEnabled(true)
             UIView.animate(withDuration: CATransaction.animationDuration()) {
                 navigationController.navigationBar.alpha = 1
                 navigationController.toolbar.alpha = 1
-                if #available(iOS 26.0, *) {
-                    (navigationController.value(forKey: "_floatingBarContainerView") as? UIView)?.alpha = 1
-                }
+//                if #available(iOS 26.0, *) {
+//                    (navigationController.value(forKey: "_floatingBarContainerView") as? UIView)?.alpha = 1
+//                }
                 self.node.backgroundColor = .systemBackground
                 self.node.layoutIfNeeded()
             }
@@ -773,9 +773,9 @@ extension ReaderViewController {
                 navigationController.navigationBar.alpha = 0
                 navigationController.toolbar.alpha = 0
 
-                if #available(iOS 26.0, *) {
-                    (navigationController.value(forKey: "_floatingBarContainerView") as? UIView)?.alpha = 0
-                }
+//                if #available(iOS 26.0, *) {
+//                    (navigationController.value(forKey: "_floatingBarContainerView") as? UIView)?.alpha = 0
+//                }
 
                 self.node.backgroundColor = switch UserDefaults.standard.string(forKey: "Reader.backgroundColor") {
                 case "system":
@@ -787,11 +787,11 @@ extension ReaderViewController {
                 }
                 self.node.layoutIfNeeded()
             } completion: { _ in
-                if #available(iOS 26.0, *) {
-                    navigationController.isToolbarHidden = true
-                } else {
-                    navigationController.toolbar.isHidden = true
-                }
+//                if #available(iOS 26.0, *) {
+//                    navigationController.isToolbarHidden = true
+//                } else {
+                navigationController.toolbar.isHidden = true
+//                }
             }
         }
     }
