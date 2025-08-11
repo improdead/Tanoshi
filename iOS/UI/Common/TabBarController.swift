@@ -28,41 +28,41 @@ class TabBarController: UITabBarController {
         settingsViewController.navigationBar.prefersLargeTitles = true
 
         if #available(iOS 26.0, *) {
-            let searchTab = UISearchTab { _ in
-                searchViewController
-            }
-            searchTab.automaticallyActivatesSearch = true
-            tabs = [
-                UITab(
-                    title: NSLocalizedString("LIBRARY"),
-                    image: UIImage(systemName: "books.vertical.fill"),
-                    identifier: "0"
-                ) { _ in
-                    libraryViewController
-                },
-                UITab(
-                    title: NSLocalizedString("BROWSE"),
-                    image: UIImage(systemName: "globe"),
-                    identifier: "1"
-                ) { _ in
-                    browseViewController
-                },
-                UITab(
-                    title: NSLocalizedString("HISTORY"),
-                    image: UIImage(systemName: "clock.fill"),
-                    identifier: "2"
-                ) { _ in
-                    historyViewController
-                },
-                UITab(
-                    title: NSLocalizedString("SETTINGS"),
-                    image: UIImage(systemName: "gear"),
-                    identifier: "3"
-                ) { _ in
-                    settingsViewController
-                },
-                searchTab
-            ]
+//            let searchTab = UISearchTab { _ in
+//                searchViewController
+//            }
+//            searchTab.automaticallyActivatesSearch = true
+//            tabs = [
+//                UITab(
+//                    title: NSLocalizedString("LIBRARY"),
+//                    image: UIImage(systemName: "books.vertical.fill"),
+//                    identifier: "0"
+//                ) { _ in
+//                    libraryViewController
+//                },
+//                UITab(
+//                    title: NSLocalizedString("BROWSE"),
+//                    image: UIImage(systemName: "globe"),
+//                    identifier: "1"
+//                ) { _ in
+//                    browseViewController
+//                },
+//                UITab(
+//                    title: NSLocalizedString("HISTORY"),
+//                    image: UIImage(systemName: "clock.fill"),
+//                    identifier: "2"
+//                ) { _ in
+//                    historyViewController
+//                },
+//                UITab(
+//                    title: NSLocalizedString("SETTINGS"),
+//                    image: UIImage(systemName: "gear"),
+//                    identifier: "3"
+//                ) { _ in
+//                    settingsViewController
+//                },
+//                searchTab
+//            ]
         } else {
             libraryViewController.tabBarItem = UITabBarItem(
                 title: NSLocalizedString("LIBRARY", comment: ""),

@@ -59,10 +59,10 @@ struct FilterListSheetView: View {
             }
 
             if #available(iOS 26.0, *) {
-                scrollView
-                    .toolbar {
-                        toolbarContentiOS26
-                    }
+//                scrollView
+//                    .toolbar {
+//                        toolbarContentiOS26
+//                    }
             } else {
                 scrollView
                     .toolbar {
@@ -110,13 +110,13 @@ struct FilterListSheetView: View {
         }
     }
 
-    @available(iOS 26.0, *)
-    @ToolbarContentBuilder
-    var toolbarContentiOS26: some ToolbarContent {
-        toolbarContent
-
-        ToolbarSpacer(.flexible, placement: .bottomBar)
-    }
+//    @available(iOS 26.0, *)
+//    @ToolbarContentBuilder
+//    var toolbarContentiOS26: some ToolbarContent {
+//        toolbarContent
+//
+//        ToolbarSpacer(.flexible, placement: .bottomBar)
+//    }
 }
 
 private struct FilterListView: View {

@@ -538,8 +538,8 @@
 		FB1B482C277CE18D0056D02C /* Shared.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Shared.xcdatamodel; sourceTree = "<group>"; };
 		FB1B482D277CE18D0056D02C /* AidokuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AidokuApp.swift; sourceTree = "<group>"; };
 		FB1B4830277CE1920056D02C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		FB1B4835277CE1920056D02C /* Aidoku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aidoku.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		FB1B483B277CE1920056D02C /* Aidoku.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aidoku.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB1B4835277CE1920056D02C /* Tanoshi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tanoshi.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB1B483B277CE1920056D02C /* Tanoshi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Tanoshi.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB1B483D277CE1920056D02C /* macOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = macOS.entitlements; sourceTree = "<group>"; };
 		FB1B4850277CE2300056D02C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FB1B4852277CE4510056D02C /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -1125,8 +1125,8 @@
 		FB1B4836277CE1920056D02C /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				FB1B4835277CE1920056D02C /* Aidoku.app */,
-				FB1B483B277CE1920056D02C /* Aidoku.app */,
+				FB1B4835277CE1920056D02C /* Tanoshi.app */,
+				FB1B483B277CE1920056D02C /* Tanoshi.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -1967,9 +1967,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		FB1B4834277CE1920056D02C /* Aidoku (iOS) */ = {
+		FB1B4834277CE1920056D02C /* Tanoshi (iOS) */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FB1B484A277CE1920056D02C /* Build configuration list for PBXNativeTarget "Aidoku (iOS)" */;
+			buildConfigurationList = FB1B484A277CE1920056D02C /* Build configuration list for PBXNativeTarget "Tanoshi (iOS)" */;
 			buildPhases = (
 				FB1B4831277CE1920056D02C /* Sources */,
 				FB1B4832277CE1920056D02C /* Frameworks */,
@@ -1980,7 +1980,7 @@
 			);
 			dependencies = (
 			);
-			name = "Aidoku (iOS)";
+			name = "Tanoshi (iOS)";
 			packageProductDependencies = (
 				FB7B7ED7278CE949001E6EAF /* ZIPFoundation */,
 				FB17114A296770CC00AD523D /* NukeUI */,
@@ -1993,12 +1993,12 @@
 				FB2C83982E43F074003CA85F /* SwiftSoup */,
 			);
 			productName = "Aidoku (iOS)";
-			productReference = FB1B4835277CE1920056D02C /* Aidoku.app */;
+			productReference = FB1B4835277CE1920056D02C /* Tanoshi.app */;
 			productType = "com.apple.product-type.application";
 		};
-		FB1B483A277CE1920056D02C /* Aidoku (macOS) */ = {
+		FB1B483A277CE1920056D02C /* Tanoshi (macOS) */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FB1B484D277CE1920056D02C /* Build configuration list for PBXNativeTarget "Aidoku (macOS)" */;
+			buildConfigurationList = FB1B484D277CE1920056D02C /* Build configuration list for PBXNativeTarget "Tanoshi (macOS)" */;
 			buildPhases = (
 				FB1B4837277CE1920056D02C /* Sources */,
 				FB1B4838277CE1920056D02C /* Frameworks */,
@@ -2008,14 +2008,14 @@
 			);
 			dependencies = (
 			);
-			name = "Aidoku (macOS)";
+			name = "Tanoshi (macOS)";
 			packageProductDependencies = (
 				FB6340C8279246D50072A2A2 /* ZIPFoundation */,
 				FB14B1342DF4D4E70067E4D4 /* Nuke */,
 				FBFDF5F92DF799340064F603 /* AidokuRunner */,
 			);
 			productName = "Aidoku (macOS)";
-			productReference = FB1B483B277CE1920056D02C /* Aidoku.app */;
+			productReference = FB1B483B277CE1920056D02C /* Tanoshi.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -2026,7 +2026,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1320;
-				LastUpgradeCheck = 1530;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					FB1B4834277CE1920056D02C = {
 						CreatedOnToolsVersion = 13.2.1;
@@ -2038,7 +2038,7 @@
 					};
 				};
 			};
-			buildConfigurationList = FB1B4829277CE18D0056D02C /* Build configuration list for PBXProject "Aidoku" */;
+			buildConfigurationList = FB1B4829277CE18D0056D02C /* Build configuration list for PBXProject "Tanoshi" */;
 			compatibilityVersion = "Xcode 13.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -2101,8 +2101,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				FB1B4834277CE1920056D02C /* Aidoku (iOS) */,
-				FB1B483A277CE1920056D02C /* Aidoku (macOS) */,
+				FB1B4834277CE1920056D02C /* Tanoshi (iOS) */,
+				FB1B483A277CE1920056D02C /* Tanoshi (macOS) */,
 			);
 		};
 /* End PBXProject section */
@@ -2719,6 +2719,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = M542AQBJC5;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -2782,6 +2783,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = M542AQBJC5;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
@@ -2811,7 +2813,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 648WP6YBU2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iOS/Info.plist;
@@ -2832,7 +2833,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.7.1;
-				PRODUCT_NAME = Aidoku;
+				PRODUCT_BUNDLE_IDENTIFIER = app.tanoshi;
+				PRODUCT_NAME = Tanoshi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2853,7 +2855,6 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 648WP6YBU2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iOS/Info.plist;
@@ -2874,7 +2875,8 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.7.1;
-				PRODUCT_NAME = Aidoku;
+				PRODUCT_BUNDLE_IDENTIFIER = app.tanoshi;
+				PRODUCT_NAME = Tanoshi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2897,7 +2899,6 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 648WP6YBU2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2909,7 +2910,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 0.1;
-				PRODUCT_NAME = Aidoku;
+				PRODUCT_NAME = Tanoshi;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -2930,7 +2931,6 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 648WP6YBU2;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -2942,7 +2942,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 0.1;
-				PRODUCT_NAME = Aidoku;
+				PRODUCT_NAME = Tanoshi;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -2952,7 +2952,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		FB1B4829277CE18D0056D02C /* Build configuration list for PBXProject "Aidoku" */ = {
+		FB1B4829277CE18D0056D02C /* Build configuration list for PBXProject "Tanoshi" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FB1B4848277CE1920056D02C /* Debug */,
@@ -2961,7 +2961,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FB1B484A277CE1920056D02C /* Build configuration list for PBXNativeTarget "Aidoku (iOS)" */ = {
+		FB1B484A277CE1920056D02C /* Build configuration list for PBXNativeTarget "Tanoshi (iOS)" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FB1B484B277CE1920056D02C /* Debug */,
@@ -2970,7 +2970,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FB1B484D277CE1920056D02C /* Build configuration list for PBXNativeTarget "Aidoku (macOS)" */ = {
+		FB1B484D277CE1920056D02C /* Build configuration list for PBXNativeTarget "Tanoshi (macOS)" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FB1B484E277CE1920056D02C /* Debug */,
