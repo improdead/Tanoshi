@@ -453,7 +453,8 @@ extension BrowseViewController {
 //            snapshot.appendItems(viewModel.externalSources, toSection: .external)
 //        }
 
-        dataSource.apply(snapshot)
+        // Use animated differences for subtle list transitions
+        dataSource.apply(snapshot, animatingDifferences: true)
 
         Task { @MainActor in
             if navigationItem.searchController?.searchBar.text?.isEmpty ?? true {

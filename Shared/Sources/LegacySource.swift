@@ -33,7 +33,8 @@ extension AidokuRunner.Source {
     }
 }
 
-final class LegacySourceRunner: AidokuRunner.Runner {
+final class LegacySourceRunner: AidokuRunner.Runner, @unchecked Sendable {
+    // Accessed on main actor or underlying source's actor; marked @unchecked due to legacy bridging
     let source: Source
 
     let features: SourceFeatures

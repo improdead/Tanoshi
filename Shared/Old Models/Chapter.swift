@@ -8,7 +8,7 @@
 import Foundation
 import AidokuRunner
 
-class Chapter: Codable, Identifiable {
+final class Chapter: Codable, Identifiable, @unchecked Sendable {
 
     let sourceId: String
     let id: String

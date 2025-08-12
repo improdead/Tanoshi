@@ -20,6 +20,7 @@ struct SourceImageView: View {
     var placeholder = "MangaPlaceholder"
 
     @State private var imageRequest: ImageRequest?
+    @State private var isLoaded: Bool = false
 
     var body: some View {
         LazyImage(
@@ -33,6 +34,14 @@ struct SourceImageView: View {
                 )
                     .frame(width: width, height: height)
                     .id(state.image != nil ? imageUrl : "placeholder") // ensures only opacity is animated
+                    .opacity(isLoaded ? 1 : 0)
+                    .scaleEffect(isLoaded ? 1 : 0.98)
+                    .animation(.spring(response: 0.45, dampingFraction: 0.85), value: isLoaded)
+                    .onChange(of: state.image != nil) { loaded in
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                            isLoaded = loaded
+                        }
+                    }
             } else {
                 let result = if let image = state.image {
                     image
@@ -44,6 +53,23 @@ struct SourceImageView: View {
                     .aspectRatio(contentMode: contentMode)
                     .frame(width: width, height: height)
                     .id(state.image != nil ? imageUrl : "placeholder") // ensures only opacity is animated
+                    .opacity(isLoaded ? 1 : 0)
+                    .scaleEffect(isLoaded ? 1 : 0.98)
+                    .animation(.spring(response: 0.45, dampingFraction: 0.85), value: isLoaded)
+                    .onChange(of: state.image != nil) { loaded in
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                            isLoaded = loaded
+                        }
+                    }
+                    .overlay(
+                        Group {
+                            if state.image == nil {
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.secondary.opacity(0.08))
+                                    .shimmering()
+                            }
+                        }
+                    )
             }
         }
         .processors({
@@ -61,10 +87,12 @@ struct SourceImageView: View {
         }
         .onChange(of: imageUrl) { newValue in
             imageRequest = nil
+            isLoaded = false
             Task {
                 await loadImageRequest(url: newValue)
             }
         }
+        .onAppear { isLoaded = false }
     }
 
     func loadImageRequest(url: String) async {

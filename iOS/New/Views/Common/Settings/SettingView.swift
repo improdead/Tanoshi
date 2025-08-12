@@ -44,6 +44,7 @@ struct SettingView: View {
 
     @StateObject private var userDefaultsObserver: UserDefaultsObserver // causes view to refresh when setting changes (e.g. when resetting)
     @StateObject private var requiresObserver: UserDefaultsObserver
+    @State private var helpText: String? = nil
 
     // empty view controller to support login view presentation
     private static var loginShimController = LoginShimViewController()
@@ -160,6 +161,14 @@ struct SettingView: View {
                 let value = UserDefaults.standard.string(forKey: key(requiresFalse))
                 self.requiresFalse = value != nil && value != "0"
             }
+        }
+        .alert(setting.title, isPresented: Binding(
+            get: { helpText != nil },
+            set: { if !$0 { helpText = nil } }
+        )) {
+            Button(NSLocalizedString("OK"), role: .cancel) { helpText = nil }
+        } message: {
+            if let helpText { Text(helpText) }
         }
     }
 
@@ -326,6 +335,15 @@ extension SettingView {
                 }
             }
             Spacer()
+            if let subtitle = value.subtitle {
+                Button {
+                    helpText = NSLocalizedString(subtitle)
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 6)
+            }
             Toggle(isOn: SettingsStore.shared.binding(key: key(setting.key))) {
                 EmptyView()
             }

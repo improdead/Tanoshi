@@ -10,6 +10,32 @@
 "CONTINUE" = "Continue";
 "CANCEL" = "Cancel";
 "OK" = "OK";
+
+// Onboarding
+"WELCOME_TO_TANOSHI" = "Welcome to Tanoshi";
+"DISCOVER_READ_AND_TRACK_MANGA_WITH_EASE" = "Discover, read, and track manga with ease";
+"TANOSHI_ONBOARDING_WELCOME_BODY" = "Browse sources, build your library, and enjoy a delightful reading experience.";
+"CHOOSE_YOUR_LOOK" = "Choose your look";
+"LIGHT_DARK_OR_FOLLOW_SYSTEM" = "Light, Dark, or follow system";
+"FOLLOW_SYSTEM_APPEARANCE" = "Follow system appearance";
+"LIGHT" = "Light";
+"DARK" = "Dark";
+"BUILD_YOUR_LIBRARY" = "Build your library";
+"ADD_SOURCES_BROWSE_AND_SAVE_FAVORITES" = "Add sources, browse, and save favorites";
+"SHOW_NSFW_SOURCES" = "Show NSFW sources";
+"LABEL_NSFW_SOURCES" = "Label NSFW sources";
+"YOU_CAN_CHANGE_THESE_ANYTIME_IN_SETTINGS" = "You can change these anytime in Settings";
+"PRIVACY_OPTIONS" = "Privacy options";
+"SYNC_AND_INCOGNITO_MODE" = "Sync and Incognito Mode";
+"ENABLE_ICLOUD_SYNC" = "Enable iCloud Sync";
+"ENABLE_INCOGNITO_MODE" = "Enable Incognito Mode";
+"YOURE_ALL_SET" = "You're all set";
+"START_EXPLORING_AND_READING" = "Start exploring and reading";
+"TIP_LONG_PRESS_FOR_QUICK_ACTIONS" = "Tip: Long-press covers and chapters for quick actions";
+"SKIP" = "Skip";
+"BACK" = "Back";
+"NEXT" = "Next";
+"GET_STARTED" = "Get Started";
 "DONE" = "Done";
 "UNKNOWN" = "Unknown";
 "UNAVAILABLE" = "Unavailable";
@@ -299,6 +325,10 @@
 "HISTORY_LOCKED" = "History is locked.";
 "VIEW_HISTORY" = "View History";
 "AUTH_FOR_HISTORY" = "Authenticate to view reading history.";
+"NO_HISTORY_TITLE" = "No History Yet";
+"NO_HISTORY_MESSAGE" = "Start reading and your recent chapters will appear here. You can browse sources to find something to read.";
+"BROWSE_TITLES" = "Browse Titles";
+"LEARN_MORE" = "Learn More";
 
 // Manga Updates
 "MANGA_UPDATES" = "Updates";

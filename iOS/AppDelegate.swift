@@ -137,7 +137,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 "Reader.pillarbox": false,
                 "Reader.pillarboxAmount": 15,
                 "Reader.pillarboxOrientation": "both",
-                "Reader.orientation": "device"
+                "Reader.orientation": "device",
+                "hasCompletedOnboarding": false
             ]
         )
 
