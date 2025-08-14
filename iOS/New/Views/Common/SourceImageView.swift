@@ -61,15 +61,6 @@ struct SourceImageView: View {
                             isLoaded = loaded
                         }
                     }
-                    .overlay(
-                        Group {
-                            if state.image == nil {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.secondary.opacity(0.08))
-                                    .shimmering()
-                            }
-                        }
-                    )
             }
         }
         .processors({

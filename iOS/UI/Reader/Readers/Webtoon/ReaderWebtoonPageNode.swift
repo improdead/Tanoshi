@@ -11,6 +11,9 @@ import Gifu
 import Nuke
 import SwiftUI
 import ZIPFoundation
+#if canImport(PDFKit)
+import PDFKit
+#endif
 
 class ReaderWebtoonPageNode: BaseObservingCellNode {
     let source: AidokuRunner.Source?
@@ -241,7 +244,11 @@ extension ReaderWebtoonPageNode {
         } else if let zipURL = page.zipURL, let url = URL(string: zipURL), let filePath = page.imageURL {
             await loadImage(zipURL: url, filePath: filePath)
         } else if let urlString = page.imageURL, let url = URL(string: urlString) {
-            await loadImage(url: url, context: page.context)
+            if url.scheme == "aidoku-pdf" {
+                await loadImage(pdfURL: url)
+            } else {
+                await loadImage(url: url, context: page.context)
+            }
         } else if let base64 = page.base64 {
             await loadImage(base64: base64)
         } else if let text = page.text {
@@ -480,6 +487,85 @@ extension ReaderWebtoonPageNode {
         }
     }
 
+    private func loadImage(pdfURL: URL) async {
+        var hasher = Hasher()
+        hasher.combine(pdfURL.absoluteString)
+        let key = String(hasher.finalize())
+
+        let request = ImageRequest(
+            id: key,
+            data: { Data() },
+            userInfo: [:]
+        )
+
+        // Store current image request for reload functionality
+        self.currentImageRequest = request
+
+        progressNode.isHidden = false
+        defer { loading = false }
+
+        // check cache
+        if ImagePipeline.shared.cache.containsCachedImage(for: request) {
+            let imageContainer = ImagePipeline.shared.cache.cachedImage(for: request)
+            image = imageContainer?.image
+            if isNodeLoaded {
+                displayPage()
+            }
+            return
+        }
+
+        let result: UIImage? = await Task.detached {
+            #if canImport(PDFKit)
+            let documentsDir = FileManager.default.documentDirectory
+            let relativePath = pdfURL.host.map { $0 + pdfURL.path } ?? pdfURL.path
+            let fileURL = documentsDir.appendingPathComponent(relativePath)
+
+            guard let components = URLComponents(url: pdfURL, resolvingAgainstBaseURL: false),
+                  let pageStr = components.queryItems?.first(where: { $0.name == "page" })?.value,
+                  let pageIndex = Int(pageStr),
+                  let document = PDFDocument(url: fileURL),
+                  let page = document.page(at: pageIndex) else {
+                return nil
+            }
+
+            let targetWidth = UIScreen.main.bounds.width * UIScreen.main.scale
+            let pageRect = page.bounds(for: .mediaBox)
+            let aspect = pageRect.height / pageRect.width
+            let size = CGSize(width: targetWidth, height: targetWidth * aspect)
+            var image = page.thumbnail(of: size, for: .mediaBox)
+
+            if UserDefaults.standard.bool(forKey: "Reader.cropBorders") {
+                let processor = CropBordersProcessor()
+                if let processedImage = processor.process(image) {
+                    image = processedImage
+                }
+            }
+            if UserDefaults.standard.bool(forKey: "Reader.downsampleImages") {
+                let processor = await DownsampleProcessor(width: UIScreen.main.bounds.width)
+                if let processedImage = processor.process(image) {
+                    image = processedImage
+                }
+            } else if UserDefaults.standard.bool(forKey: "Reader.upscaleImages") {
+                let processor = UpscaleProcessor()
+                if let processedImage = processor.process(image) {
+                    image = processedImage
+                }
+            }
+
+            return image
+            #else
+            return nil
+            #endif
+        }.value
+        guard let result else { return }
+
+        ImagePipeline.shared.cache.storeCachedImage(ImageContainer(image: result), for: request)
+        image = result
+        if isNodeLoaded {
+            displayPage()
+        }
+    }
+
     private func loadText(_ text: String) {
         self.text = text
         if isNodeLoaded {
@@ -570,6 +656,12 @@ extension ReaderWebtoonPageNode {
             var hasher = Hasher()
             hasher.combine(url)
             hasher.combine(filePath)
+            let key = String(hasher.finalize())
+            let request = ImageRequest(id: key, data: { Data() })
+            ImagePipeline.shared.cache.removeCachedImage(for: request)
+        } else if let urlString = page.imageURL, let url = URL(string: urlString), url.scheme == "aidoku-pdf" {
+            var hasher = Hasher()
+            hasher.combine(url.absoluteString)
             let key = String(hasher.finalize())
             let request = ImageRequest(id: key, data: { Data() })
             ImagePipeline.shared.cache.removeCachedImage(for: request)

@@ -9,6 +9,9 @@ import AidokuRunner
 import CoreData
 import Foundation
 import ZIPFoundation
+#if canImport(PDFKit)
+import PDFKit
+#endif
 
 #if os(macOS)
 import AppKit
@@ -20,7 +23,7 @@ actor LocalFileManager {
 
     private var lastScanTime = Date.distantPast
 
-    static let allowedFileExtensions = Set(["cbz", "zip"])
+    static let allowedFileExtensions = Set(["cbz", "zip", "pdf"])
     static let allowedImageExtensions = Set(["jpg", "jpeg", "png", "webp"])
 
     private var localFolderFileDescriptor: CInt?
@@ -55,55 +58,81 @@ extension LocalFileManager {
             return nil
         }
 
-        // read zip file
-        let archive: Archive
-        do {
-            archive = try Archive(url: url, accessMode: .read)
-        } catch {
-            return nil
-        }
-
-        // find image entries (pages)
-        let imageEntries = archive
-            .filter { entry in
-                let ext = String(entry.path.lowercased().split(separator: ".").last ?? "")
-                return Self.allowedImageExtensions.contains(ext)
+        if pathExtension == "pdf" {
+            #if canImport(PDFKit)
+            guard let document = PDFDocument(url: url) else { return nil }
+            let pageCount = document.pageCount
+            guard pageCount > 0 else { return nil }
+            let previewImages: [PlatformImage] = (0..<min(3, pageCount)).compactMap { index in
+                guard let page = document.page(at: index) else { return nil }
+                #if os(iOS)
+                let size = CGSize(width: 800, height: 1200)
+                #else
+                let size = CGSize(width: 800, height: 1200)
+                #endif
+                return page.thumbnail(of: size, for: .mediaBox)
             }
-            .sorted { $0.path < $1.path }
-
-        guard !imageEntries.isEmpty else {
+            return ImportFileInfo(
+                url: url,
+                previewImages: previewImages,
+                name: url.lastPathComponent,
+                pageCount: pageCount,
+                fileType: .pdf
+            )
+            #else
             return nil
-        }
-
-        // extract the first three images for preview
-        let previewImages = imageEntries.prefix(3).compactMap { entry -> PlatformImage? in
-            var imageData = Data()
+            #endif
+        } else {
+            // read zip file
+            let archive: Archive
             do {
-                _ = try archive.extract(
-                    entry,
-                    consumer: { data in
-                        imageData.append(data)
-                    }
-                )
-                return PlatformImage(data: imageData)
+                archive = try Archive(url: url, accessMode: .read)
             } catch {
                 return nil
             }
-        }
 
-        let fileType = switch pathExtension {
-            case "cbz": LocalFileType.cbz
-            case "zip": LocalFileType.zip
-            default: LocalFileType.zip
-        }
+            // find image entries (pages)
+            let imageEntries = archive
+                .filter { entry in
+                    let ext = String(entry.path.lowercased().split(separator: ".").last ?? "")
+                    return Self.allowedImageExtensions.contains(ext)
+                }
+                .sorted { $0.path < $1.path }
 
-        return ImportFileInfo(
-            url: url,
-            previewImages: previewImages,
-            name: url.lastPathComponent,
-            pageCount: imageEntries.count,
-            fileType: fileType
-        )
+            guard !imageEntries.isEmpty else {
+                return nil
+            }
+
+            // extract the first three images for preview
+            let previewImages = imageEntries.prefix(3).compactMap { entry -> PlatformImage? in
+                var imageData = Data()
+                do {
+                    _ = try archive.extract(
+                        entry,
+                        consumer: { data in
+                            imageData.append(data)
+                        }
+                    )
+                    return PlatformImage(data: imageData)
+                } catch {
+                    return nil
+                }
+            }
+
+            let fileType = switch pathExtension {
+                case "cbz": LocalFileType.cbz
+                case "zip": LocalFileType.zip
+                default: LocalFileType.zip
+            }
+
+            return ImportFileInfo(
+                url: url,
+                previewImages: previewImages,
+                name: url.lastPathComponent,
+                pageCount: imageEntries.count,
+                fileType: fileType
+            )
+        }
     }
 }
 
@@ -113,27 +142,47 @@ extension LocalFileManager {
         guard let cbzPath = await LocalFileDataManager.shared.fetchChapterArchivePath(mangaId: mangaId, chapterId: chapterId)
         else { return [] }
 
-        // read zip file
+        // read file
         let documentsDir = FileManager.default.documentDirectory
-        let archiveUrl = documentsDir.appendingPathComponent(cbzPath)
-        let archive: Archive
-        do {
-            archive = try Archive(url: archiveUrl, accessMode: .read)
-        } catch {
-            return []
-        }
-
-        // find image entries (pages)
-        let imageEntries = archive
-            .filter { entry in
-                let ext = String(entry.path.lowercased().split(separator: ".").last ?? "")
-                return Self.allowedImageExtensions.contains(ext)
+        let fileUrl = documentsDir.appendingPathComponent(cbzPath)
+        let ext = fileUrl.pathExtension.lowercased()
+        if ["cbz", "zip"].contains(ext) {
+            let archive: Archive
+            do {
+                archive = try Archive(url: fileUrl, accessMode: .read)
+            } catch {
+                return []
             }
-            // sort by file name
-            .sorted { $0.path < $1.path }
 
-        return imageEntries.map { entry in
-            AidokuRunner.Page(content: .zipFile(url: archiveUrl, filePath: entry.path))
+            // find image entries (pages)
+            let imageEntries = archive
+                .filter { entry in
+                    let ext = String(entry.path.lowercased().split(separator: ".").last ?? "")
+                    return Self.allowedImageExtensions.contains(ext)
+                }
+                // sort by file name
+                .sorted { $0.path < $1.path }
+
+            return imageEntries.map { entry in
+                AidokuRunner.Page(content: .zipFile(url: fileUrl, filePath: entry.path))
+            }
+        } else if ext == "pdf" {
+            // generate special pdf URLs for lazy rendering in reader
+            #if canImport(PDFKit)
+            guard let document = PDFDocument(url: fileUrl) else { return [] }
+            let count = document.pageCount
+            let base = URL(string: "aidoku-pdf://\(cbzPath)")
+            return (0..<count).compactMap { idx in
+                var components = URLComponents(url: base!, resolvingAgainstBaseURL: false)
+                components?.queryItems = [URLQueryItem(name: "page", value: String(idx))]
+                guard let url = components?.url else { return nil }
+                return AidokuRunner.Page(content: .url(url: url))
+            }
+            #else
+            return []
+            #endif
+        } else {
+            return []
         }
     }
 }
@@ -195,25 +244,29 @@ extension LocalFileManager {
             }
         }
 
-        // read zip file
-        let archive: Archive
-        do {
-            archive = try Archive(url: url, accessMode: .read)
-        } catch {
-            LogManager.logger.error("Failed to read archive at \(url.path): \(error)")
-            throw LocalFileManagerError.cannotReadArchive
-        }
-
-        // find image entries (pages)
-        let imageEntries = archive
-            .filter { entry in
-                let ext = String(entry.path.lowercased().split(separator: ".").last ?? "")
-                return Self.allowedImageExtensions.contains(ext)
+        let isPDF = url.pathExtension.lowercased() == "pdf"
+        var archive: Archive?
+        var imageEntries: [Entry] = []
+        if !isPDF {
+            // read zip file
+            do {
+                archive = try Archive(url: url, accessMode: .read)
+            } catch {
+                LogManager.logger.error("Failed to read archive at \(url.path): \(error)")
+                throw LocalFileManagerError.cannotReadArchive
             }
-            .sorted { $0.path < $1.path }
 
-        guard !imageEntries.isEmpty else {
-            throw LocalFileManagerError.noImagesFound
+            // find image entries (pages)
+            imageEntries = archive!
+                .filter { entry in
+                    let ext = String(entry.path.lowercased().split(separator: ".").last ?? "")
+                    return Self.allowedImageExtensions.contains(ext)
+                }
+                .sorted { $0.path < $1.path }
+
+            if imageEntries.isEmpty {
+                throw LocalFileManagerError.noImagesFound
+            }
         }
 
         let resolvedMangaId = mangaId ?? mangaName ?? url.deletingPathExtension().lastPathComponent
@@ -293,17 +346,29 @@ extension LocalFileManager {
                 throw LocalFileManagerError.fileCopyFailed
             }
         } else if mangaId == nil {
-            // copy first page image to use as cover image
-            let firstImageEntry = imageEntries.first!
-            let coverExt = (firstImageEntry.path as NSString).pathExtension
-            let coverFileName = "cover.\(coverExt)"
-            let newCoverURL = mangaFolder.appendingPathComponent(coverFileName)
+            // generate cover from first page
+            let newCoverURL = mangaFolder.appendingPathComponent("cover.png")
             do {
                 if newCoverURL.exists {
                     try? fileManager.removeItem(at: newCoverURL)
                 }
-                _ = try archive.extract(firstImageEntry, to: newCoverURL)
-                coverURL = newCoverURL
+                if isPDF {
+                    #if canImport(PDFKit)
+                    if let doc = PDFDocument(url: url), let page = doc.page(at: 0) {
+                        let image = page.thumbnail(of: CGSize(width: 800, height: 1200), for: .mediaBox)
+                        try image.pngData()?.write(to: newCoverURL)
+                        coverURL = newCoverURL
+                    } else {
+                        // fallback to placeholder cover if PDF can't render
+                        coverURL = nil
+                    }
+                    #endif
+                } else if let archive = archive, let firstImageEntry = imageEntries.first {
+                    _ = try archive.extract(firstImageEntry, to: newCoverURL)
+                    coverURL = newCoverURL
+                } else {
+                    coverURL = nil
+                }
             } catch {
                 throw LocalFileManagerError.fileCopyFailed
             }

@@ -87,16 +87,13 @@ class TabBarController: UITabBarController {
                 image: UIImage(systemName: "gear"),
                 tag: 4
             )
-            // Wrap in cross-dissolve to avoid abrupt appearance on first load
-            UIView.transition(with: view, duration: 0.25, options: [.transitionCrossDissolve, .allowAnimatedContent]) {
-                self.viewControllers = [
-                    libraryViewController,
-                    browseViewController,
-                    historyViewController,
-                    searchViewController,
-                    settingsViewController
-                ]
-            }
+            viewControllers = [
+                libraryViewController,
+                browseViewController,
+                historyViewController,
+                searchViewController,
+                settingsViewController
+            ]
 //        }
 
         let updateCount = UserDefaults.standard.integer(forKey: "Browse.updateCount")

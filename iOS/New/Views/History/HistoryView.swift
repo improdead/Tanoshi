@@ -9,8 +9,6 @@ import AidokuRunner
 import LocalAuthentication
 import SwiftUI
 import SwiftUIIntrospect
-import Foundation
-import UIKit
 
 struct HistoryView: View {
     @Environment(\.dismiss) private var dismiss
@@ -36,7 +34,27 @@ struct HistoryView: View {
             if locked {
                 lockedView
             } else {
-                historyContent
+                List(selection: $selectedItems) {
+                    ForEach(viewModel.filteredHistory, id: \.daysAgo) { section in
+                        if !section.entries.isEmpty {
+                            Section {
+                                ForEach(section.entries, id: \.key) { entry in
+                                    cellView(entry: entry)
+                                }
+                            } header: {
+                                headerView(daysAgo: section.daysAgo)
+                            }
+                        }
+                    }
+
+                    loadMoreView
+                }
+                .listStyle(.grouped)
+                .environment(\.defaultMinListRowHeight, 1)
+                .environment(\.defaultMinListHeaderHeight, 1) // for ios 15
+                .listSectionSpacingPlease(10)
+                .scrollBackgroundHiddenPlease()
+                .background(Color(uiColor: .systemBackground))
             }
         }
         .customSearchable(
@@ -82,7 +100,6 @@ struct HistoryView: View {
         }
         .confirmationDialog(NSLocalizedString("CLEAR_READ_HISTORY"), isPresented: $showClearHistoryConfirm, titleVisibility: .visible) {
             Button(NSLocalizedString("CLEAR"), role: .destructive) {
-                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 viewModel.clearHistory()
             }
         } message: {
@@ -91,7 +108,6 @@ struct HistoryView: View {
         .confirmationDialog(NSLocalizedString("CLEAR_READ_HISTORY"), isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button(NSLocalizedString("REMOVE"), role: .destructive) {
                 if let entryToDelete {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     Task {
                         await viewModel.removeHistory(entry: entryToDelete)
                     }
@@ -99,7 +115,6 @@ struct HistoryView: View {
             }
             Button(NSLocalizedString("REMOVE_ALL_MANGA_HISTORY"), role: .destructive) {
                 if let entryToDelete {
-                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                     Task {
                         await viewModel.removeHistory(entry: entryToDelete, all: true)
                     }
@@ -116,64 +131,6 @@ struct HistoryView: View {
             // lock the view when the app is backgrounded
             locked = UserDefaults.standard.bool(forKey: "History.lockHistoryTab")
         }
-    }
-
-    @ViewBuilder
-    private var historyContent: some View {
-        if viewModel.filteredHistory.isEmpty {
-            emptyStateContent
-        } else {
-            historyListContent
-        }
-    }
-
-    @ViewBuilder
-    private var emptyStateContent: some View {
-        HistoryEmptyStateView(
-            systemImage: "clock.badge.questionmark",
-            title: NSLocalizedString("NO_HISTORY_TITLE"),
-            message: NSLocalizedString("NO_HISTORY_MESSAGE"),
-            primaryActionTitle: NSLocalizedString("BROWSE_TITLES"),
-            primaryAction: {
-                UISelectionFeedbackGenerator().selectionChanged()
-                // Jump to Browse tab if available
-                if let tab = path.rootViewController?.tabBarController as? UITabBarController {
-                    tab.selectedIndex = 1 // Browse tab
-                }
-            },
-            secondaryActionTitle: NSLocalizedString("LEARN_MORE"),
-            secondaryAction: {
-                UISelectionFeedbackGenerator().selectionChanged()
-                // Navigate to settings privacy section if available
-                path.rootViewController?.tabBarController?.selectedIndex = 4
-            }
-        )
-        .background(Color(uiColor: .systemBackground))
-    }
-
-    @ViewBuilder
-    private var historyListContent: some View {
-        List(selection: $selectedItems) {
-            ForEach(viewModel.filteredHistory, id: \.daysAgo) { section in
-                if !section.entries.isEmpty {
-                    Section {
-                        ForEach(section.entries, id: \.key) { entry in
-                            cellView(entry: entry)
-                        }
-                    } header: {
-                        headerView(daysAgo: section.daysAgo)
-                    }
-                }
-            }
-
-            loadMoreView
-        }
-        .listStyle(.grouped)
-        .environment(\.defaultMinListRowHeight, 1)
-        .environment(\.defaultMinListHeaderHeight, 1) // for ios 15
-        .listSectionSpacingPlease(10)
-        .scrollBackgroundHiddenPlease()
-        .background(Color(uiColor: .systemBackground))
     }
 
     var lockedView: some View {

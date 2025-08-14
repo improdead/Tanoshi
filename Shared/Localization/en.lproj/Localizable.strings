@@ -36,6 +36,7 @@
 "BACK" = "Back";
 "NEXT" = "Next";
 "GET_STARTED" = "Get Started";
+"DELIGHTFUL_READER" = "Delightful Reader";
 "DONE" = "Done";
 "UNKNOWN" = "Unknown";
 "UNAVAILABLE" = "Unavailable";
@@ -182,7 +183,7 @@
 "IMPORT" = "Import";
 "IMPORT_FILE" = "Import File";
 "LOCAL_FILE_IMPORT" = "Local File Import";
-"LOCAL_FILE_IMPORT_TEXT" = "Import a CBZ or ZIP file containing images to read.";
+"LOCAL_FILE_IMPORT_TEXT" = "Import a CBZ, ZIP, or PDF file to read.";
 "CHAPTER_TITLE" = "Chapter Title";
 "SERIES_TITLE" = "Series Title";
 "DESCRIPTION" = "Description";
@@ -200,6 +201,7 @@
 "1_PAGE" = "1 page";
 "CBZ_NAME" = "Comic Book Zip Archive";
 "ZIP_NAME" = "Zip Archive";
+"PDF_NAME" = "PDF";
 
 // Komga
 "KOMGA" = "Komga";
@@ -325,10 +327,6 @@
 "HISTORY_LOCKED" = "History is locked.";
 "VIEW_HISTORY" = "View History";
 "AUTH_FOR_HISTORY" = "Authenticate to view reading history.";
-"NO_HISTORY_TITLE" = "No History Yet";
-"NO_HISTORY_MESSAGE" = "Start reading and your recent chapters will appear here. You can browse sources to find something to read.";
-"BROWSE_TITLES" = "Browse Titles";
-"LEARN_MORE" = "Learn More";
 
 // Manga Updates
 "MANGA_UPDATES" = "Updates";

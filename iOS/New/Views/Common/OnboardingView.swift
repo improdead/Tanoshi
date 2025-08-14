@@ -11,7 +11,7 @@ import SwiftUI
 import UIKit
 #endif
 
-struct OnboardingView: View {
+struct FirstRunOnboardingView: View {
     let onFinish: () -> Void
 
     @State private var pageIndex: Int = 0
@@ -140,8 +140,8 @@ struct OnboardingView: View {
 
 // MARK: - Components
 
-private struct OnboardingPageView: View {
-    let page: OnboardingView.Page
+    private struct OnboardingPageView: View {
+        let page: FirstRunOnboardingView.Page
     @State private var appear = false
 
     var body: some View {

@@ -11,6 +11,9 @@ import MarkdownUI
 import Nuke
 import SwiftUI
 import ZIPFoundation
+#if canImport(PDFKit)
+import PDFKit
+#endif
 
 class ReaderPageView: UIView {
 
@@ -91,7 +94,11 @@ class ReaderPageView: UIView {
         } else if let zipURL = page.zipURL, let url = URL(string: zipURL), let filePath = page.imageURL {
             return await setPageImage(zipURL: url, filePath: filePath)
         } else if let urlString = page.imageURL, let url = URL(string: urlString) {
-            return await setPageImage(url: url, context: page.context, sourceId: self.sourceId)
+            if url.scheme == "aidoku-pdf" {
+                return await setPageImage(pdfURL: url)
+            } else {
+                return await setPageImage(url: url, context: page.context, sourceId: self.sourceId)
+            }
         } else if let base64 = page.base64 {
             return await setPageImage(base64: base64, key: page.hashValue)
         } else if let text = page.text {
@@ -374,6 +381,87 @@ class ReaderPageView: UIView {
         return true
     }
 
+    func setPageImage(pdfURL: URL) async -> Bool {
+        // remove text view if it exists
+        if let textView {
+            textView.view.removeFromSuperview()
+            textView.didMove(toParent: nil)
+            self.textView = nil
+        }
+
+        var hasher = Hasher()
+        hasher.combine(pdfURL.absoluteString)
+        let key = String(hasher.finalize())
+
+        let request = ImageRequest(id: key, data: { Data() })
+
+        // Store current image request for reload functionality
+        self.currentImageRequest = request
+
+        progressView.setProgress(value: 0, withAnimation: false)
+        progressView.isHidden = false
+        defer { progressView.isHidden = true }
+
+        if ImagePipeline.shared.cache.containsCachedImage(for: request) {
+            let imageContainer = ImagePipeline.shared.cache.cachedImage(for: request)
+            imageView.image = imageContainer?.image
+            fixImageSize()
+            return true
+        }
+
+        let image: UIImage? = await Task.detached { () -> UIImage? in
+            #if canImport(PDFKit)
+            // pdfURL path is relative to documents directory
+            let documentsDir = FileManager.default.documentDirectory
+            let relativePath = pdfURL.host.map { $0 + pdfURL.path } ?? pdfURL.path
+            let fileURL = documentsDir.appendingPathComponent(relativePath)
+
+            guard let components = URLComponents(url: pdfURL, resolvingAgainstBaseURL: false),
+                  let pageStr = components.queryItems?.first(where: { $0.name == "page" })?.value,
+                  let pageIndex = Int(pageStr),
+                  let document = PDFDocument(url: fileURL),
+                  let page = document.page(at: pageIndex) else {
+                return nil
+            }
+
+            // Render thumbnail roughly at screen width
+            let targetWidth = UIScreen.main.bounds.width * UIScreen.main.scale
+            let pageRect = page.bounds(for: .mediaBox)
+            let aspect = pageRect.height / pageRect.width
+            let size = CGSize(width: targetWidth, height: targetWidth * aspect)
+            var image = page.thumbnail(of: size, for: .mediaBox)
+
+            if UserDefaults.standard.bool(forKey: "Reader.cropBorders") {
+                let processor = CropBordersProcessor()
+                if let processedImage = processor.process(image) {
+                    image = processedImage
+                }
+            }
+            if UserDefaults.standard.bool(forKey: "Reader.downsampleImages") {
+                let processor = await DownsampleProcessor(width: UIScreen.main.bounds.width)
+                if let processedImage = processor.process(image) {
+                    image = processedImage
+                }
+            } else if UserDefaults.standard.bool(forKey: "Reader.upscaleImages") {
+                let processor = UpscaleProcessor()
+                if let processedImage = processor.process(image) {
+                    image = processedImage
+                }
+            }
+
+            return image
+            #else
+            return nil
+            #endif
+        }.value
+        guard let image else { return false }
+
+        ImagePipeline.shared.cache.storeCachedImage(ImageContainer(image: image), for: request)
+        imageView.image = image
+        fixImageSize()
+        return true
+    }
+
     // match image constraints with image size
     func fixImageSize() {
         guard imageView.image != nil else { return }
@@ -481,6 +569,13 @@ class ReaderPageView: UIView {
             var hasher = Hasher()
             hasher.combine(url)
             hasher.combine(filePath)
+            let key = String(hasher.finalize())
+            let request = ImageRequest(id: key, data: { Data() })
+            ImagePipeline.shared.cache.removeCachedImage(for: request)
+        }
+        if let urlString = currentPage.imageURL, let url = URL(string: urlString), url.scheme == "aidoku-pdf" {
+            var hasher = Hasher()
+            hasher.combine(url.absoluteString)
             let key = String(hasher.finalize())
             let request = ImageRequest(id: key, data: { Data() })
             ImagePipeline.shared.cache.removeCachedImage(for: request)
