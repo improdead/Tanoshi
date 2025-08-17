@@ -478,6 +478,7 @@
 		FBFDD40427838AB90055ED9F /* Sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBFDD40227838AB90055ED9F /* Sequence.swift */; };
 		FBFDF5F82DF799180064F603 /* AidokuRunner in Frameworks */ = {isa = PBXBuildFile; productRef = FBFDF5F72DF799180064F603 /* AidokuRunner */; };
 		FBFDF5FA2DF799340064F603 /* AidokuRunner in Frameworks */ = {isa = PBXBuildFile; productRef = FBFDF5F92DF799340064F603 /* AidokuRunner */; };
+		AABBCCDD0000000000000002 /* AIAnalysisStubs.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABBCCDD0000000000000001 /* AIAnalysisStubs.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -623,6 +624,7 @@
 		FB4C09D929B03DE1009E0761 /* VerticalContentOffsetPreservingLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticalContentOffsetPreservingLayout.swift; sourceTree = "<group>"; };
 		FB4E57982E3529BD006EF27C /* TabBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarController.swift; sourceTree = "<group>"; };
 		FB4E579A2E352CAA006EF27C /* UIKeyModifierFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKeyModifierFlags.swift; sourceTree = "<group>"; };
+		AABBCCDD0000000000000001 /* AIAnalysisStubs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iOS/UI/Reader/Readers/Webtoon/AIAnalysisStubs.swift"; sourceTree = SOURCE_ROOT; };
 		FB4EB4FE28AA959C00FDEA4A /* CoreDataManager+Track.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CoreDataManager+Track.swift"; sourceTree = "<group>"; };
 		FB4EBFC12E450FC800D83F9A /* ClearFieldButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearFieldButton.swift; sourceTree = "<group>"; };
 		FB4EBFC32E45123D00D83F9A /* TextFieldWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldWrapper.swift; sourceTree = "<group>"; };
@@ -1290,6 +1292,7 @@
 				FB7F05F52DDCDC900036B116 /* HostingNode.swift */,
 				FB4C09D929B03DE1009E0761 /* VerticalContentOffsetPreservingLayout.swift */,
 				FBE53F0D29CCA78000899601 /* HeightQueryable.swift */,
+				AABBCCDD0000000000000001 /* AIAnalysisStubs.swift */,
 			);
 			path = Webtoon;
 			sourceTree = "<group>";
@@ -2154,6 +2157,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                AABBCCDD0000000000000002 /* AIAnalysisStubs.swift in Sources */,
 				FB4B0AEE285D2EE30066A13B /* MyAnimeListModels.swift in Sources */,
 				FB8E48D52DBFCEFB002A3621 /* SourceHomeContentView.swift in Sources */,
 				FB55AFA328AAAEDF0083EFC3 /* ReaderPagedViewController.swift in Sources */,

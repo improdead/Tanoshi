@@ -42,6 +42,10 @@ class ReaderWebtoonViewController: ZoomableCollectionViewController {
     // Stores the last calculated page number
     private var previousPage = 0
 
+    // Preparation overlay (blocks interaction while preparing first pages)
+    private var preparationOverlay: UIView?
+    private var preparationLabel: UILabel?
+
     init(source: AidokuRunner.Source?, manga: AidokuRunner.Manga) {
         self.viewModel = ReaderWebtoonViewModel(source: source, manga: manga)
         super.init(layout: VerticalContentOffsetPreservingLayout())
@@ -89,6 +93,53 @@ class ReaderWebtoonViewController: ZoomableCollectionViewController {
             self?.infinite = notification.object as? Bool
                 ?? UserDefaults.standard.bool(forKey: "Reader.verticalInfiniteScroll")
         }
+    }
+
+    private func showPreparationOverlay() {
+        guard preparationOverlay == nil else { return }
+        let overlay = UIView(frame: view.bounds)
+        overlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
+        overlay.isUserInteractionEnabled = true
+
+        let container = UIStackView()
+        container.axis = .vertical
+        container.alignment = .center
+        container.spacing = 12
+        container.translatesAutoresizingMaskIntoConstraints = false
+
+        let spinner = UIActivityIndicatorView(style: .large)
+        spinner.startAnimating()
+
+        let label = UILabel()
+        label.textColor = .white
+        label.font = UIFont.preferredFont(forTextStyle: .headline)
+        label.text = NSLocalizedString("Preparing…", comment: "")
+
+        container.addArrangedSubview(spinner)
+        container.addArrangedSubview(label)
+        overlay.addSubview(container)
+
+        NSLayoutConstraint.activate([
+            container.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            container.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)
+        ])
+
+        view.addSubview(overlay)
+        view.bringSubviewToFront(overlay)
+
+        preparationOverlay = overlay
+        preparationLabel = label
+    }
+
+    private func updatePreparationOverlay(text: String) {
+        preparationLabel?.text = text
+    }
+
+    private func hidePreparationOverlay() {
+        preparationOverlay?.removeFromSuperview()
+        preparationOverlay = nil
+        preparationLabel = nil
     }
 
     enum ScreenPosition {
@@ -533,6 +584,23 @@ extension ReaderWebtoonViewController: ReaderReaderDelegate {
         chapters = [chapter]
 
         Task {
+            // Kick off background AI analysis for the current chapter if enabled
+            let mangaId = self.viewModel.manga.key
+            let chapterId = chapter.key
+            let autoEnabled = await AIAnalysisConfigManager.shared.isAutoAnalysisEnabled
+            if autoEnabled {
+                Task.detached {
+                    do {
+                        _ = try await AIAnalysisManager.shared.analyzeChapterAutomatically(
+                            mangaId: mangaId,
+                            chapterId: chapterId
+                        )
+                    } catch {
+                        LogManager.logger.warn("Background AI analysis on reader open failed: \(error)")
+                    }
+                }
+            }
+
             await viewModel.loadPages(chapter: chapter)
             delegate?.setPages(viewModel.pages)
             if viewModel.pages.isEmpty {
@@ -568,12 +636,34 @@ extension ReaderWebtoonViewController: ReaderReaderDelegate {
             zoomView.adjustContentSize()
 
             // scroll to first page
+            // Gate reading until we have at least 10 prepared pages when auto analysis is enabled
+            if autoEnabled {
+                // Present a blocking overlay with progress while preparing first pages
+                Task { @MainActor in self.showPreparationOverlay() }
+
+                // Prepare first 10 pages (analysis + per-page audio)
+                await AIAnalysisManager.shared.prepareFirstPages(
+                    mangaId: self.viewModel.manga.key,
+                    chapterId: chapter.key,
+                    minimumPages: 10,
+                    generateAudio: true,
+                    progress: { prepared, target in
+                        Task { @MainActor in
+                            self.updatePreparationOverlay(text: String(format: NSLocalizedString("Preparing %d/%d pages…", comment: ""), prepared, target))
+                        }
+                    }
+                )
+
+                Task { @MainActor in self.hidePreparationOverlay() }
+            }
+
             collectionNode.scrollToItem(
                 at: IndexPath(row: startPage, section: 0),
                 at: .top,
                 animated: false
             )
             scrollView.contentOffset = collectionNode.contentOffset
+            Task { @MainActor in self.title = nil }
         }
     }
 }
