@@ -44,6 +44,8 @@ actor AIAnalysisConfigManager {
 	static let shared = AIAnalysisConfigManager()
 	var isAutoAnalysisEnabled: Bool { false }
 	var voiceSettings: Void { () }
+	/// Max pages per client-driven batch (placeholder default)
+	var analysisBatchSize: Int { 20 }
 	func validateConfiguration() async throws {}
 }
 
@@ -73,6 +75,24 @@ actor AIAnalysisManager {
 	func getAnalysisResult(mangaId: String, chapterId: String) async -> AnalysisResult? {
 		return nil
 	}
+
+	// MARK: - Client-driven listening (no-op stubs)
+	func startListeningSession(mangaId: String, chapterId: String, totalPages: Int?) async {}
+
+	func preparePagesRange(
+		mangaId: String,
+		chapterId: String,
+		startIndex: Int,
+		count: Int,
+		generateAudio: Bool,
+		progress: ((Int, Int) -> Void)? = nil
+	) async throws -> (start: Int, end: Int) {
+		let c = max(1, min(count, 20))
+		progress?(c, c)
+		return (startIndex, max(startIndex, startIndex + c - 1))
+	}
+
+	func getLastListenedEndIndex(mangaId: String, chapterId: String) -> Int? { nil }
 
 	func prepareFirstPages(
 		mangaId: String,

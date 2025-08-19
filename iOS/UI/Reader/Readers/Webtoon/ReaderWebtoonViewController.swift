@@ -701,7 +701,7 @@ extension ReaderWebtoonViewController: ReaderReaderDelegate {
                             guard accepted else { return }
                             Task {
                                 self.listeningEnabledForChapter = true
-                                await AIAnalysisManager.shared.startListeningSession(mangaId: mangaId, chapterId: chapterId, totalPages: viewModel.pages.count)
+                                await AIAnalysisManager.shared.startListeningSession(mangaId: mangaId, chapterId: chapterId, totalPages: self.viewModel.pages.count)
                                 let batchSize = await AIAnalysisConfigManager.shared.analysisBatchSize
                                 do {
                                     _ = try await AIAnalysisManager.shared.preparePagesRange(
