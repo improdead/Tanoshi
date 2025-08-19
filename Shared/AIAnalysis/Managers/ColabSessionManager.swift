@@ -16,7 +16,6 @@ actor ColabSessionManager {
     private let apiClient = ColabAPIClient.shared
     
     // Session state
-    // Plain stored properties; avoid @Published in actors
     private(set) var sessionStatus: SessionStatus = .disconnected
     private(set) var currentEndpoint: URL?
     private(set) var sessionStartTime: Date?
@@ -137,7 +136,7 @@ actor ColabSessionManager {
             let healthResponse = try await apiClient.healthCheck()
             
             if healthResponse.status != "healthy" {
-                LogManager.logger.warn("Colab service unhealthy: \(healthResponse.status)")
+                LogManager.logger.warning("Colab service unhealthy: \(healthResponse.status)")
                 
                 // Attempt reconnection
                 try await reconnectSession()
@@ -152,7 +151,7 @@ actor ColabSessionManager {
             if let startTime = sessionStartTime,
                Date().timeIntervalSince(startTime) > maxSessionDuration {
                 sessionStatus = .expired
-                LogManager.logger.warn("Colab session likely expired")
+                LogManager.logger.warning("Colab session likely expired")
             } else {
                 // Attempt reconnection
                 do {

@@ -117,41 +117,7 @@ class ReaderWebtoonPageNode: BaseObservingCellNode {
         super.didEnterVisibleState()
         displayPage()
 
-        // Ensure page-level AI analysis and audio generation are available on demand
-        guard let delegate = self.delegate,
-              let chapter = delegate.chapter else { return }
-
-        let mangaId = delegate.viewModel.manga.key
-        let chapterId = chapter.key
-        let pageIndex = page.index
-
-        Task.detached {
-            do {
-                if let pageAnalysis = try await AIAnalysisManager.shared.analyzePageAutomatically(
-                    mangaId: mangaId,
-                    chapterId: chapterId,
-                    pageIndex: pageIndex
-                ) {
-                    // Generate audio for this page if not present, then start playback for the page
-                    let segments = try await AIAnalysisManager.shared.generatePageAudio(
-                        mangaId: mangaId,
-                        chapterId: chapterId,
-                        pageIndex: pageIndex,
-                        pageAnalysis: pageAnalysis
-                    )
-                    if !segments.isEmpty,
-                       let analysis = await AIAnalysisManager.shared.getAnalysisResult(mangaId: mangaId, chapterId: chapterId) {
-                        await AudioPlaybackManager.shared.playPageAudio(
-                            segments,
-                            transcript: analysis.transcript,
-                            pageIndex: pageIndex
-                        )
-                    }
-                }
-            } catch {
-                LogManager.logger.debug("Page-level AI ensure failed for page \(pageIndex): \(error)")
-            }
-        }
+        // Gate-enforced: do not auto-process pages here. Audio preparation is triggered via the gate.
     }
 
     override func animateLayoutTransition(_ context: ASContextTransitioning) {

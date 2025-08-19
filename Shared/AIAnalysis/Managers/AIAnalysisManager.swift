@@ -27,9 +27,13 @@ actor AIAnalysisManager {
     // Active analysis jobs
     private var activeJobs: [String: AnalysisJob] = [:]
     
-    // Progress tracking
-    // NOTE: Using plain stored properties; @Published is not valid in an actor context.
-    // If UI observation is needed in the future, expose async accessors/streams.
+    // Ephemeral, in-memory results for current run (cleared when chapter closes)
+    // Keyed by "mangaId:chapterId"
+    private var ephemeralPageAnalyses: [String: [Int: PageAnalysis]] = [:] // pageIndex -> PageAnalysis
+    private var ephemeralAudioSegments: [String: [String: AudioSegment]] = [:] // dialogueId -> AudioSegment
+    private var lastListenedEndIndex: [String: Int] = [:] // exclusive end index of last listened range
+    
+    // Progress tracking (actor-isolated storage)
     private var analysisProgress: [String: Double] = [:] // mangaId:chapterId -> progress
     private var isAnalyzing: [String: Bool] = [:] // mangaId:chapterId -> isActive
     
@@ -59,6 +63,170 @@ actor AIAnalysisManager {
         }
         
         return try await analyzeFullChapter(mangaId: mangaId, chapterId: chapterId)
+    }
+
+    // MARK: - Ephemeral Listening Sessions (Client-driven batching)
+    
+    /// Start or update a listening session for a chapter. Optionally provide total pages.
+    func startListeningSession(mangaId: String, chapterId: String, totalPages: Int?) async {
+        let cacheKey = "\(mangaId):\(chapterId)"
+        if ephemeralPageAnalyses[cacheKey] == nil { ephemeralPageAnalyses[cacheKey] = [:] }
+        if ephemeralAudioSegments[cacheKey] == nil { ephemeralAudioSegments[cacheKey] = [:] }
+        if lastListenedEndIndex[cacheKey] == nil { lastListenedEndIndex[cacheKey] = 0 }
+    }
+    
+    /// Prepare a contiguous range of pages (max count enforced by config). Optionally generate audio.
+    /// Returns the actual start and end indices processed.
+    func preparePagesRange(
+        mangaId: String,
+        chapterId: String,
+        startIndex: Int,
+        count: Int,
+        generateAudio: Bool,
+        progress: ((Int, Int) -> Void)? = nil
+    ) async throws -> (start: Int, end: Int) {
+        let configBatchSize = await AIAnalysisConfigManager.shared.analysisBatchSize
+        let batchCount = max(1, min(count, configBatchSize))
+        let safeStart = max(0, startIndex)
+        let indices = Array(safeStart..<(safeStart + batchCount))
+        let cacheKey = "\(mangaId):\(chapterId)"
+        if ephemeralPageAnalyses[cacheKey] == nil { ephemeralPageAnalyses[cacheKey] = [:] }
+        if ephemeralAudioSegments[cacheKey] == nil { ephemeralAudioSegments[cacheKey] = [:] }
+        
+        // Extract images for requested indices
+        var images: [UIImage] = []
+        for (i, pageIndex) in indices.enumerated() {
+            do {
+                let image = try await extractSinglePage(mangaId: mangaId, chapterId: chapterId, pageIndex: pageIndex)
+                images.append(image)
+                progress?(i + 1, batchCount)
+            } catch {
+                LogManager.logger.warn("Failed to extract page \(pageIndex): \(error)")
+            }
+        }
+        if images.isEmpty {
+            return (safeStart, safeStart - 1)
+        }
+        
+        // Character bank (optional)
+        let characterBank = await characterBankManager.getCharacterBank(mangaId: mangaId)
+        
+        // Start analysis for this batch
+        let jobId = try await colabClient.startAnalysis(pages: images, characterBank: characterBank)
+        let result = try await pollBatchCompletion(jobId: jobId)
+        
+        // Map returned pages (0..images.count-1) to the original page indices
+        let mappedPageAnalyses: [(pageIndex: Int, analysis: PageAnalysis)] = result.pages.enumerated().map { idx, page in
+            let originalIndex = indices[min(idx, indices.count - 1)]
+            return (originalIndex, PageAnalysis(
+                pageIndex: originalIndex,
+                textRegions: page.textRegions,
+                characterDetections: page.characterDetections,
+                textCharacterAssociations: page.textCharacterAssociations
+            ))
+        }
+        
+        // Store ephemeral analyses
+        for entry in mappedPageAnalyses {
+            ephemeralPageAnalyses[cacheKey]?[entry.pageIndex] = entry.analysis
+        }
+        
+        // Optionally generate audio per page
+        if generateAudio {
+            let voiceSettings = await configManager.voiceSettings
+            for entry in mappedPageAnalyses {
+                let dialogue = createDialogueFromPageAnalysis(entry.analysis, pageIndex: entry.pageIndex)
+                guard !dialogue.isEmpty else { continue }
+                do {
+                    let audioJob = try await colabClient.generatePageAudio(dialogue: dialogue, voiceSettings: voiceSettings)
+                    let segments = try await pollAudioBatchCompletion(jobId: audioJob)
+                    for seg in segments {
+                        ephemeralAudioSegments[cacheKey]?[seg.dialogueId] = seg
+                    }
+                } catch {
+                    LogManager.logger.warn("Audio generation failed for page \(entry.pageIndex): \(error)")
+                }
+            }
+            // Advance last listened exclusive end index
+            let newEndExclusive = (indices.last ?? safeStart) + 1
+            lastListenedEndIndex[cacheKey] = max(lastListenedEndIndex[cacheKey] ?? 0, newEndExclusive)
+        }
+        
+        return (indices.first ?? safeStart, indices.last ?? (safeStart + images.count - 1))
+    }
+    
+    /// Whether audio is available for the given page in the current run.
+    func hasAudioForPage(mangaId: String, chapterId: String, pageIndex: Int) -> Bool {
+        let cacheKey = "\(mangaId):\(chapterId)"
+        guard let map = ephemeralAudioSegments[cacheKey] else { return false }
+        let prefix = "\(pageIndex)_"
+        return map.keys.contains(where: { $0.hasPrefix(prefix) })
+    }
+    
+    /// Get ephemeral audio segments for a page (empty if none)
+    func getPageAudioEphemeral(mangaId: String, chapterId: String, pageIndex: Int) -> [AudioSegment] {
+        let cacheKey = "\(mangaId):\(chapterId)"
+        guard let map = ephemeralAudioSegments[cacheKey] else { return [] }
+        let prefix = "\(pageIndex)_"
+        return map.values.filter { $0.dialogueId.hasPrefix(prefix) }.sorted { $0.dialogueId < $1.dialogueId }
+    }
+    
+    /// Get processed range (based on analyses) if available.
+    func getProcessedRange(mangaId: String, chapterId: String) -> ClosedRange<Int>? {
+        let cacheKey = "\(mangaId):\(chapterId)"
+        guard let pagesMap = ephemeralPageAnalyses[cacheKey], !pagesMap.isEmpty else { return nil }
+        let sorted = pagesMap.keys.sorted()
+        return sorted.first!...sorted.last!
+    }
+    
+    /// Get last listened end index (exclusive) for chapter.
+    func getLastListenedEndIndex(mangaId: String, chapterId: String) -> Int? {
+        let cacheKey = "\(mangaId):\(chapterId)"
+        return lastListenedEndIndex[cacheKey]
+    }
+    
+    /// Clear ephemeral memory for a chapter (called on chapter close)
+    func clearEphemeralForChapter(mangaId: String, chapterId: String) {
+        let cacheKey = "\(mangaId):\(chapterId)"
+        ephemeralPageAnalyses[cacheKey] = nil
+        ephemeralAudioSegments[cacheKey] = nil
+        lastListenedEndIndex[cacheKey] = nil
+    }
+    
+    // MARK: - Poll helpers (no persistence/progress changes)
+    
+    private func pollBatchCompletion(jobId: String) async throws -> AnalysisResult {
+        let maxAttempts = 60
+        let pollInterval: TimeInterval = 5.0
+        for _ in 0..<maxAttempts {
+            let response = try await colabClient.getAnalysisStatus(jobId: jobId)
+            switch response.status {
+            case "completed":
+                if let result = response.result { return result }
+                return try await colabClient.getAnalysisResult(jobId: jobId)
+            case "failed":
+                throw AIAnalysisError.invalidResponse
+            case "processing", "pending":
+                try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+            default:
+                try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+            }
+        }
+        throw AIAnalysisError.analysisTimeout
+    }
+    
+    private func pollAudioBatchCompletion(jobId: String) async throws -> [AudioSegment] {
+        let maxAttempts = 30
+        let pollInterval: TimeInterval = 5.0
+        for _ in 0..<maxAttempts {
+            do {
+                let segments = try await colabClient.getAudioResult(jobId: jobId)
+                return segments
+            } catch {
+                try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+            }
+        }
+        throw AIAnalysisError.audioGenerationFailed
     }
     
     /// Manually analyze a full chapter (works with all manga sources)
@@ -665,7 +833,7 @@ actor AIAnalysisManager {
                 try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
                 
             default:
-                LogManager.logger.warn("Unknown analysis status: \(response.status)")
+                LogManager.logger.warning("Unknown analysis status: \(response.status)")
                 try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
             }
         }
@@ -787,7 +955,7 @@ actor AIAnalysisManager {
                     pages.append(image)
                 }
             } catch {
-                LogManager.logger.warn("Failed to extract image \(entry.path): \(error)")
+                LogManager.logger.warning("Failed to extract image \(entry.path): \(error)")
             }
         }
         
@@ -827,7 +995,7 @@ actor AIAnalysisManager {
                 try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
                 
             default:
-                LogManager.logger.warn("Unknown analysis status: \(response.status)")
+                LogManager.logger.warning("Unknown analysis status: \(response.status)")
                 try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
             }
         }
@@ -1047,7 +1215,7 @@ actor AIAnalysisManager {
                 return UIImage(data: data)
                 
             @unknown default:
-                LogManager.logger.warn("Unknown page content type")
+                LogManager.logger.warning("Unknown page content type")
                 return nil
             }
         } catch {

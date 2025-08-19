@@ -92,3 +92,5 @@ class AudioPlaybackManager: NSObject {
 	static let shared = AudioPlaybackManager()
 	func playPageAudio(_ segments: [AudioSegment], transcript: [DialogueLine], pageIndex: Int) async {}
 }
+
+

@@ -23,6 +23,7 @@ actor AIAnalysisConfigManager {
         static let voiceLanguage = "ai_analysis_voice_language"
         static let autoAnalysisEnabled = "ai_analysis_auto_enabled"
         static let cacheMaxSize = "ai_analysis_cache_max_size"
+        static let analysisBatchSize = "ai_analysis_batch_size"
     }
     
     private init() {}
@@ -104,6 +105,17 @@ actor AIAnalysisConfigManager {
         }
         set {
             userDefaults.set(newValue, forKey: ConfigKeys.cacheMaxSize)
+        }
+    }
+
+    /// Maximum number of pages to process per batch when enabling listening. Default: 20.
+    var analysisBatchSize: Int {
+        get {
+            let value = userDefaults.integer(forKey: ConfigKeys.analysisBatchSize)
+            return value > 0 ? value : 20
+        }
+        set {
+            userDefaults.set(newValue, forKey: ConfigKeys.analysisBatchSize)
         }
     }
     

@@ -45,6 +45,28 @@ class ReaderWebtoonViewController: ZoomableCollectionViewController {
     // Preparation overlay (blocks interaction while preparing first pages)
     private var preparationOverlay: UIView?
     private var preparationLabel: UILabel?
+    private var listeningEnabledForChapter = false
+
+    // Simple ad-gate placeholder: replace with real ad SDK integration later
+    private func presentAdGate(completion: @escaping (Bool) -> Void) {
+        // NOTE: Replace this alert with your rewarded/playable ad presentation.
+        // Call completion(true) when the ad starts (we start processing immediately),
+        // and completion(true) again when the ad ends if you want to chain UI actions.
+        // For now, we just mimic the flow: user consents and an ad "plays" quickly.
+        let alert = UIAlertController(
+            title: NSLocalizedString("Ad break", comment: ""),
+            message: NSLocalizedString("We’ll prepare audio for the next pages while a short ad plays.", comment: ""),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { _ in
+            completion(false)
+        })
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Start", comment: ""), style: .default) { _ in
+            // Simulate ad start/end; processing should already begin on start
+            completion(true)
+        })
+        present(alert, animated: true)
+    }
 
     init(source: AidokuRunner.Source?, manga: AidokuRunner.Manga) {
         self.viewModel = ReaderWebtoonViewModel(source: source, manga: manga)
@@ -140,6 +162,83 @@ class ReaderWebtoonViewController: ZoomableCollectionViewController {
         preparationOverlay?.removeFromSuperview()
         preparationOverlay = nil
         preparationLabel = nil
+    }
+
+    @objc private func handleListenTapped() {
+        guard let chapter = chapter else { return }
+        let mangaId = viewModel.manga.key
+        let chapterId = chapter.key
+
+        // If already enabled this run, nudge to continue listening next batch from last end index
+        if listeningEnabledForChapter {
+            Task { @MainActor in
+                let alert = UIAlertController(
+                    title: NSLocalizedString("Continue Listening?", comment: ""),
+                    message: NSLocalizedString("Prepare audio for the next 20 pages while an ad plays.", comment: ""),
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: NSLocalizedString("Not now", comment: ""), style: .cancel))
+                alert.addAction(UIAlertAction(title: NSLocalizedString("Continue", comment: ""), style: .default) { _ in
+                    self.presentAdGate { accepted in
+                        guard accepted else { return }
+                        Task {
+                            await AIAnalysisManager.shared.startListeningSession(mangaId: mangaId, chapterId: chapterId, totalPages: self.viewModel.pages.count)
+                            let batchSize = await AIAnalysisConfigManager.shared.analysisBatchSize
+                            let start = await AIAnalysisManager.shared.getLastListenedEndIndex(mangaId: mangaId, chapterId: chapterId) ?? 0
+                            do {
+                                _ = try await AIAnalysisManager.shared.preparePagesRange(
+                                    mangaId: mangaId,
+                                    chapterId: chapterId,
+                                    startIndex: start,
+                                    count: batchSize,
+                                    generateAudio: true,
+                                    progress: nil
+                                )
+                            } catch {
+                                LogManager.logger.warn("Continue listening batch failed: \(error)")
+                            }
+                        }
+                    }
+                })
+                self.present(alert, animated: true)
+            }
+            return
+        }
+
+        // Otherwise, enable listening from current or start of chapter
+        Task { @MainActor in
+            let alert = UIAlertController(
+                title: NSLocalizedString("Enable Listening?", comment: ""),
+                message: NSLocalizedString("Prepare audio for the next 20 pages while an ad plays.", comment: ""),
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Not now", comment: ""), style: .cancel))
+            alert.addAction(UIAlertAction(title: NSLocalizedString("Enable", comment: ""), style: .default) { _ in
+                self.presentAdGate { accepted in
+                    guard accepted else { return }
+                    Task {
+                        self.listeningEnabledForChapter = true
+                        await AIAnalysisManager.shared.startListeningSession(mangaId: mangaId, chapterId: chapterId, totalPages: self.viewModel.pages.count)
+                        let batchSize = await AIAnalysisConfigManager.shared.analysisBatchSize
+                        let current = self.getCurrentPage()
+                        let startIndex = max(0, current)
+                        do {
+                            _ = try await AIAnalysisManager.shared.preparePagesRange(
+                                mangaId: mangaId,
+                                chapterId: chapterId,
+                                startIndex: startIndex,
+                                count: batchSize,
+                                generateAudio: true,
+                                progress: nil
+                            )
+                        } catch {
+                            LogManager.logger.warn("Enable listening batch failed: \(error)")
+                        }
+                    }
+                }
+            })
+            self.present(alert, animated: true)
+        }
     }
 
     enum ScreenPosition {
@@ -589,15 +688,37 @@ extension ReaderWebtoonViewController: ReaderReaderDelegate {
             let chapterId = chapter.key
             let autoEnabled = await AIAnalysisConfigManager.shared.isAutoAnalysisEnabled
             if autoEnabled {
-                Task.detached {
-                    do {
-                        _ = try await AIAnalysisManager.shared.analyzeChapterAutomatically(
-                            mangaId: mangaId,
-                            chapterId: chapterId
-                        )
-                    } catch {
-                        LogManager.logger.warn("Background AI analysis on reader open failed: \(error)")
-                    }
+                // Offer listening flow (non-blocking gate). If accepted, process first batch while ads play.
+                Task { @MainActor in
+                    let gate = UIAlertController(
+                        title: NSLocalizedString("Enable Listening?", comment: ""),
+                        message: NSLocalizedString("Prepare audio for the next 20 pages while an ad plays.", comment: ""),
+                        preferredStyle: .alert
+                    )
+                    gate.addAction(UIAlertAction(title: NSLocalizedString("Not now", comment: ""), style: .cancel))
+                    gate.addAction(UIAlertAction(title: NSLocalizedString("Enable", comment: ""), style: .default) { _ in
+                        self.presentAdGate { accepted in
+                            guard accepted else { return }
+                            Task {
+                                self.listeningEnabledForChapter = true
+                                await AIAnalysisManager.shared.startListeningSession(mangaId: mangaId, chapterId: chapterId, totalPages: viewModel.pages.count)
+                                let batchSize = await AIAnalysisConfigManager.shared.analysisBatchSize
+                                do {
+                                    _ = try await AIAnalysisManager.shared.preparePagesRange(
+                                        mangaId: mangaId,
+                                        chapterId: chapterId,
+                                        startIndex: 0,
+                                        count: batchSize,
+                                        generateAudio: true,
+                                        progress: nil
+                                    )
+                                } catch {
+                                    LogManager.logger.warn("Initial listening batch failed: \(error)")
+                                }
+                            }
+                        }
+                    })
+                    self.present(gate, animated: true)
                 }
             }
 
@@ -632,30 +753,13 @@ extension ReaderWebtoonViewController: ReaderReaderDelegate {
                 startPage = viewModel.pages.count
             }
 
-            await collectionNode.reloadData()
+            await collectionNode.reloadData()   
             zoomView.adjustContentSize()
 
             // scroll to first page
-            // Gate reading until we have at least 10 prepared pages when auto analysis is enabled
-            if autoEnabled {
-                // Present a blocking overlay with progress while preparing first pages
-                Task { @MainActor in self.showPreparationOverlay() }
-
-                // Prepare first 10 pages (analysis + per-page audio)
-                await AIAnalysisManager.shared.prepareFirstPages(
-                    mangaId: self.viewModel.manga.key,
-                    chapterId: chapter.key,
-                    minimumPages: 10,
-                    generateAudio: true,
-                    progress: { prepared, target in
-                        Task { @MainActor in
-                            self.updatePreparationOverlay(text: String(format: NSLocalizedString("Preparing %d/%d pages…", comment: ""), prepared, target))
-                        }
-                    }
-                )
-
-                Task { @MainActor in self.hidePreparationOverlay() }
-            }
+            // No blocking overlay; reading is never blocked by listening flow
+            // Add a simple "Listen" button to allow enabling listening later
+            navigationItem.rightBarButtonItem = UIBarButtonItem(title: NSLocalizedString("Listen", comment: ""), style: .plain, target: self, action: #selector(handleListenTapped))
 
             collectionNode.scrollToItem(
                 at: IndexPath(row: startPage, section: 0),
