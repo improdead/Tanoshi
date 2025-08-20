@@ -408,14 +408,34 @@ extension LocalFileManager {
             url.deletingPathExtension().lastPathComponent
         }
 
+        // Create chapter and kick off background AI analysis (if enabled)
+        let createdChapterId = UUID().uuidString
         await LocalFileDataManager.shared.createChapter(
             mangaId: resolvedMangaId,
             url: destURL,
-            id: UUID().uuidString,
+            id: createdChapterId,
             title: title,
             volume: volume,
             chapter: chapter
         )
+
+        // Trigger automatic background analysis for this chapter when configured
+        let autoEnabled = await AIAnalysisConfigManager.shared.isAutoAnalysisEnabled
+        if autoEnabled {
+            let mangaIdForAnalysis = resolvedMangaId
+            let chapterIdForAnalysis = createdChapterId
+            Task.detached {
+                do {
+                    _ = try await AIAnalysisManager.shared.analyzeChapterAutomatically(
+                        mangaId: mangaIdForAnalysis,
+                        chapterId: chapterIdForAnalysis
+                    )
+                } catch {
+                    // Non-fatal: importing should not fail due to background analysis
+                    LogManager.logger.warn("Background AI analysis after import failed: \(error)")
+                }
+            }
+        }
     }
 }
 

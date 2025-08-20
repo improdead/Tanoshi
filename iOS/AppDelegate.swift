@@ -162,6 +162,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         ImagePipeline.shared = pipeline
 
+        #if DEBUG
+        Task {
+            guard let url = URL(string: "https://improdead--ai-manga-analysis-modal-fastapi-app.modal.run/") else { return }
+            var cfg = await AIAnalysisConfigManager.shared.colabConfiguration
+            cfg = ColabConfiguration(
+                endpointURL: url,
+                apiKey: nil,
+                timeout: 60,
+                maxRetries: 3,
+                batchSize: 20
+            )
+            await AIAnalysisConfigManager.shared.setColabConfiguration(cfg)
+            await AIAnalysisConfigManager.shared.isAutoAnalysisEnabled = true
+            try? await AIAnalysisConfigManager.shared.validateConfiguration()
+            try? await ColabSessionManager.shared.startSession(endpointURL: url)
+        }
+        #endif
+
         // migrate history to 0.6 format
         if UserDefaults.standard.string(forKey: "currentVersion") == "0.5" {
             Task.detached {

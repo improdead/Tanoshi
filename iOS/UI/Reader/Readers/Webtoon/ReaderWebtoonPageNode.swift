@@ -116,6 +116,8 @@ class ReaderWebtoonPageNode: BaseObservingCellNode {
     override func didEnterVisibleState() {
         super.didEnterVisibleState()
         displayPage()
+
+        // Gate-enforced: do not auto-process pages here. Audio preparation is triggered via the gate.
     }
 
     override func animateLayoutTransition(_ context: ASContextTransitioning) {
