@@ -7,6 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+        BF1111111111111111111111 /* AIAnalysisManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1111111111111111111111 /* AIAnalysisManager.swift */; };
+        BF2222222222222222222222 /* AIAnalysisConfigManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA2222222222222222222222 /* AIAnalysisConfigManager.swift */; };
+        BF3333333333333333333333 /* ColabAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA3333333333333333333333 /* ColabAPIClient.swift */; };
+        BF4444444444444444444444 /* ColabSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA4444444444444444444444 /* ColabSessionManager.swift */; };
+        BF5555555555555555555555 /* AnalysisCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA5555555555555555555555 /* AnalysisCacheManager.swift */; };
+        BF6666666666666666666666 /* AudioPlaybackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6666666666666666666666 /* AudioPlaybackManager.swift */; };
+        BF7777777777777777777777 /* CharacterBankManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA7777777777777777777777 /* CharacterBankManager.swift */; };
+        BF8888888888888888888888 /* AIAnalysis.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA8888888888888888888888 /* AIAnalysis.swift */; };
 		04B48CF82CD6836100F719D0 /* ShikimoriTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B48CF72CD6835D00F719D0 /* ShikimoriTracker.swift */; };
 		04B48CF92CD6836100F719D0 /* ShikimoriTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B48CF72CD6835D00F719D0 /* ShikimoriTracker.swift */; };
 		04B48CFB2CD6838C00F719D0 /* ShikimoriApi.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B48CFA2CD6838600F719D0 /* ShikimoriApi.swift */; };
@@ -482,6 +490,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+        FA1111111111111111111111 /* AIAnalysisManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared/AIAnalysis/Managers/AIAnalysisManager.swift"; sourceTree = SOURCE_ROOT; };
+        FA2222222222222222222222 /* AIAnalysisConfigManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared/AIAnalysis/Managers/AIAnalysisConfigManager.swift"; sourceTree = SOURCE_ROOT; };
+        FA3333333333333333333333 /* ColabAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared/AIAnalysis/Managers/ColabAPIClient.swift"; sourceTree = SOURCE_ROOT; };
+        FA4444444444444444444444 /* ColabSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared/AIAnalysis/Managers/ColabSessionManager.swift"; sourceTree = SOURCE_ROOT; };
+        FA5555555555555555555555 /* AnalysisCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared/AIAnalysis/Managers/AnalysisCacheManager.swift"; sourceTree = SOURCE_ROOT; };
+        FA6666666666666666666666 /* AudioPlaybackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared/AIAnalysis/Managers/AudioPlaybackManager.swift"; sourceTree = SOURCE_ROOT; };
+        FA7777777777777777777777 /* CharacterBankManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared/AIAnalysis/Managers/CharacterBankManager.swift"; sourceTree = SOURCE_ROOT; };
+        FA8888888888888888888888 /* AIAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Shared/AIAnalysis/Models/AIAnalysis.swift"; sourceTree = SOURCE_ROOT; };
 		04B48CF72CD6835D00F719D0 /* ShikimoriTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShikimoriTracker.swift; sourceTree = "<group>"; };
 		04B48CFA2CD6838600F719D0 /* ShikimoriApi.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShikimoriApi.swift; sourceTree = "<group>"; };
 		04B48CFD2CD6B3AD00F719D0 /* ShikimoriQueries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShikimoriQueries.swift; sourceTree = "<group>"; };

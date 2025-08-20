@@ -9,15 +9,3 @@ soundfile
 numpy
 tqdm
 requests
-modal==0.64.78
-fastapi==0.115.0
-uvicorn[standard]==0.30.6
-transformers
-Pillow
-TTS
-librosa
-soundfile
-numpy
-tqdm
-requests
-

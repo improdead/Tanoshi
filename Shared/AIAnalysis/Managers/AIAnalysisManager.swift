@@ -833,7 +833,7 @@ actor AIAnalysisManager {
                 try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
                 
             default:
-                LogManager.logger.warning("Unknown analysis status: \(response.status)")
+                LogManager.logger.warn("Unknown analysis status: \(response.status)")
                 try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
             }
         }
@@ -955,7 +955,7 @@ actor AIAnalysisManager {
                     pages.append(image)
                 }
             } catch {
-                LogManager.logger.warning("Failed to extract image \(entry.path): \(error)")
+                LogManager.logger.warn("Failed to extract image \(entry.path): \(error)")
             }
         }
         
@@ -995,7 +995,7 @@ actor AIAnalysisManager {
                 try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
                 
             default:
-                LogManager.logger.warning("Unknown analysis status: \(response.status)")
+                LogManager.logger.warn("Unknown analysis status: \(response.status)")
                 try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
             }
         }
@@ -1215,7 +1215,7 @@ actor AIAnalysisManager {
                 return UIImage(data: data)
                 
             @unknown default:
-                LogManager.logger.warning("Unknown page content type")
+                LogManager.logger.warn("Unknown page content type")
                 return nil
             }
         } catch {

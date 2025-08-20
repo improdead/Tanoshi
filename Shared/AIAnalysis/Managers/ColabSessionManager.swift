@@ -136,7 +136,7 @@ actor ColabSessionManager {
             let healthResponse = try await apiClient.healthCheck()
             
             if healthResponse.status != "healthy" {
-                LogManager.logger.warning("Colab service unhealthy: \(healthResponse.status)")
+                LogManager.logger.warn("Colab service unhealthy: \(healthResponse.status)")
                 
                 // Attempt reconnection
                 try await reconnectSession()
@@ -151,7 +151,7 @@ actor ColabSessionManager {
             if let startTime = sessionStartTime,
                Date().timeIntervalSince(startTime) > maxSessionDuration {
                 sessionStatus = .expired
-                LogManager.logger.warning("Colab session likely expired")
+                LogManager.logger.warn("Colab session likely expired")
             } else {
                 // Attempt reconnection
                 do {
