@@ -32,20 +32,6 @@ audio_jobs = modal.Dict.from_name("ai_audio_jobs", create_if_missing=True)
 image = (
     modal.Image.debian_slim()
     .apt_install("ffmpeg", "libsndfile1")
-    .env(
-        {
-            # HuggingFace caches
-            "HF_HOME": "/cache/hf",
-            "HF_HUB_CACHE": "/cache/hf",
-            "TRANSFORMERS_CACHE": "/cache/hf",
-            # XDG caches used by various libs
-            "XDG_CACHE_HOME": "/cache/xdg",
-            "XDG_DATA_HOME": "/cache/xdg",
-            # Coqui TTS
-            "COQUI_TOS_AGREED": "1",
-            "TTS_HOME": "/cache/tts",
-        }
-    )
     .pip_install(
         [
             "fastapi==0.115.0",
@@ -76,7 +62,7 @@ image = (
     image=image,
     gpu="L4",
     timeout=60 * 30,
-    volumes={"/cache": model_cache},
+    volumes={"/vol": model_cache},
 )
 class AIMangaPipeline:
     @modal.enter()
@@ -90,6 +76,21 @@ class AIMangaPipeline:
         self._setup_error = None
 
         try:
+            # Configure caches to mounted volume at runtime (avoid non-empty mount path during build)
+            os.environ["COQUI_TOS_AGREED"] = "1"
+            os.environ["HF_HOME"] = "/vol/hf"
+            os.environ["HF_HUB_CACHE"] = "/vol/hf"
+            os.environ["TRANSFORMERS_CACHE"] = "/vol/hf"
+            os.environ["XDG_CACHE_HOME"] = "/vol/xdg"
+            os.environ["XDG_DATA_HOME"] = "/vol/xdg"
+            os.environ["TTS_HOME"] = "/vol/tts"
+            # Ensure directories exist on the mounted volume
+            for p in ["/vol/hf", "/vol/xdg", "/vol/tts"]:
+                try:
+                    os.makedirs(p, exist_ok=True)
+                except Exception:
+                    pass
+
             # Load MAGI; weights will be cached in /cache/hf
             logger.info("Loading MAGI model ...")
             self._magi = AutoModel.from_pretrained(
@@ -329,19 +330,19 @@ def fastapi_app() -> "FastAPI":
 
     @api.post("/warm")
     def warm() -> Dict[str, str]:
-        AIMangaPipeline().ping.call()
+        AIMangaPipeline().ping.remote()
         return {"status": "ok"}
 
     @api.get("/connected")
     def connected() -> Dict[str, Any]:
         out: Dict[str, Any] = {"modalConnected": False, "pipeline": None, "error": None}
         try:
-            AIMangaPipeline().ping.call()
+            AIMangaPipeline().ping.remote()
             out["modalConnected"] = True
         except Exception as e:
             out["error"] = f"ping failed: {e}"
         try:
-            out["pipeline"] = AIMangaPipeline().status.call()
+            out["pipeline"] = AIMangaPipeline().status.remote()
         except Exception as e:
             out["error"] = (out.get("error") or "") + f"; status failed: {e}"
         return out
@@ -386,7 +387,7 @@ def fastapi_app() -> "FastAPI":
         audio_jobs[job_id] = {"status": "processing"}
 
         # Synchronous so the first poll to /audio/result succeeds
-        AIMangaPipeline().run_audio.call(
+        AIMangaPipeline().run_audio.remote(
             job_id, transcript, body.get("voiceSettings", {})
         )
         return {"job_id": job_id}
@@ -416,13 +417,7 @@ def fastapi_app() -> "FastAPI":
 
 @app.function(timeout=60)
 def warm_once() -> str:
-    AIMangaPipeline().ping.call()
-    return "ok"
-
-
-@app.function(timeout=60, schedule=modal.Period(minutes=12))
-def keep_warm() -> str:
-    AIMangaPipeline().ping.call()
+    AIMangaPipeline().ping.remote()
     return "ok"
 
 
