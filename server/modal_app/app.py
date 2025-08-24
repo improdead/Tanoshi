@@ -30,7 +30,7 @@ audio_jobs = modal.Dict.from_name("ai_audio_jobs", create_if_missing=True)
 
 # Base image with deps. Heavy model wheels get cached in the volume at runtime.
 image = (
-    modal.Image.from_dockerhub("python:3.11-slim")
+    modal.Image.debian_slim()
     .apt_install("ffmpeg", "libsndfile1")
     .pip_install(
         [
@@ -38,6 +38,7 @@ image = (
             "uvicorn[standard]==0.30.6",
             "transformers",
             "Pillow",
+            "bangla==0.0.4",
             "TTS",
             "librosa",
             "soundfile",
