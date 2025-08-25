@@ -40,6 +40,11 @@ class ReaderPagedViewController: BaseObservingViewController {
 
     private lazy var pageViewController = makePageViewController()
 
+    // Listening UI/state (mirrors Webtoon)
+    private var preparationOverlay: UIView?
+    private var preparationLabel: UILabel?
+    private var listeningEnabledForChapter = false
+
     func makePageViewController() -> UIPageViewController {
         UIPageViewController(
             transitionStyle: .scroll,
@@ -83,6 +88,138 @@ class ReaderPagedViewController: BaseObservingViewController {
                 controller.clearPage()
             }
         }
+    }
+
+    // MARK: - Listening helpers (UI)
+
+    private func showPreparationOverlay() {
+        let overlay = UIView(frame: .zero)
+        overlay.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+
+        let label = UILabel(frame: .zero)
+        label.textColor = .white
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.text = NSLocalizedString("Preparing audio…", comment: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        overlay.addSubview(label)
+        view.addSubview(overlay)
+
+        NSLayoutConstraint.activate([
+            overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            overlay.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            overlay.heightAnchor.constraint(equalToConstant: 36),
+
+            label.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            label.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)
+        ])
+
+        preparationOverlay = overlay
+        preparationLabel = label
+    }
+
+    private func updatePreparationOverlay(text: String) {
+        preparationLabel?.text = text
+    }
+
+    private func hidePreparationOverlay() {
+        preparationOverlay?.removeFromSuperview()
+        preparationOverlay = nil
+        preparationLabel = nil
+    }
+
+    private func presentAdGate(completion: @escaping (Bool) -> Void) {
+        let alert = UIAlertController(
+            title: NSLocalizedString("Ad break", comment: ""),
+            message: NSLocalizedString("We’ll prepare audio for the next pages while a short ad plays.", comment: ""),
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Cancel", comment: ""), style: .cancel) { _ in
+            completion(false)
+        })
+        alert.addAction(UIAlertAction(title: NSLocalizedString("Start", comment: ""), style: .default) { _ in
+            completion(true)
+        })
+        present(alert, animated: true)
+    }
+
+    @objc private func handleListenTapped() {
+        guard let chapter = chapter else { return }
+        let mangaId = viewModel.manga.key
+        let chapterId = chapter.key
+
+        if listeningEnabledForChapter {
+            // Continue next batch from last end index
+            Task { @MainActor in
+                self.presentAdGate { accepted in
+                    guard accepted else { return }
+                    Task {
+                        await AIAnalysisManager.shared.startListeningSession(mangaId: mangaId, chapterId: chapterId, totalPages: self.viewModel.pages.count)
+                        let batchSize = await AIAnalysisConfigManager.shared.analysisBatchSize
+                        let start = await AIAnalysisManager.shared.getLastListenedEndIndex(mangaId: mangaId, chapterId: chapterId) ?? 0
+                        self.showPreparationOverlay()
+                        do {
+                            _ = try await AIAnalysisManager.shared.preparePagesRange(
+                                mangaId: mangaId,
+                                chapterId: chapterId,
+                                startIndex: start,
+                                count: batchSize,
+                                generateAudio: true,
+                                progress: { done, total in
+                                    Task { @MainActor in
+                                        self.updatePreparationOverlay(text: String(format: NSLocalizedString("Preparing audio %d/%d", comment: ""), done, total))
+                                    }
+                                }
+                            )
+                        } catch {}
+                        self.hidePreparationOverlay()
+                    }
+                }
+            }
+            return
+        }
+
+        // First time enable from current page
+        Task { @MainActor in
+            self.presentAdGate { accepted in
+                guard accepted else { return }
+                Task {
+                    self.listeningEnabledForChapter = true
+                    await AIAnalysisManager.shared.startListeningSession(mangaId: mangaId, chapterId: chapterId, totalPages: self.viewModel.pages.count)
+                    let batchSize = await AIAnalysisConfigManager.shared.analysisBatchSize
+                    let startIndex = max(0, self.currentPage - 1)
+                    self.showPreparationOverlay()
+                    do {
+                        _ = try await AIAnalysisManager.shared.preparePagesRange(
+                            mangaId: mangaId,
+                            chapterId: chapterId,
+                            startIndex: startIndex,
+                            count: batchSize,
+                            generateAudio: true,
+                            progress: { done, total in
+                                Task { @MainActor in
+                                    self.updatePreparationOverlay(text: String(format: NSLocalizedString("Preparing audio %d/%d", comment: ""), done, total))
+                                }
+                            }
+                        )
+                    } catch {}
+                    self.hidePreparationOverlay()
+                }
+            }
+        }
+    }
+
+    private func updateListenButtonStatus(for page: Int) {
+        guard let chapter = chapter else { return }
+        let ready = AIAnalysisManager.shared.hasAudioForPage(
+            mangaId: viewModel.manga.key,
+            chapterId: chapter.key,
+            pageIndex: max(0, page - 1)
+        )
+        let title = ready ? NSLocalizedString("Listen ✓", comment: "") : NSLocalizedString("Listen", comment: "")
+        navigationItem.rightBarButtonItem?.title = title
     }
 
     func updatePageLayout() {
@@ -353,6 +490,13 @@ extension ReaderPagedViewController: ReaderReaderDelegate {
                     startPage = viewModel.pages.count
                 }
                 self.move(toPage: startPage, animated: false)
+                // Add Listen toggle like Webtoon
+                self.navigationItem.rightBarButtonItem = UIBarButtonItem(
+                    title: NSLocalizedString("Listen", comment: ""),
+                    style: .plain,
+                    target: self,
+                    action: #selector(self.handleListenTapped)
+                )
             }
         }
     }
@@ -434,6 +578,8 @@ extension ReaderPagedViewController: UIPageViewControllerDelegate {
             } else {
                 delegate?.setCurrentPage(page)
             }
+            // Update Listen button status for current page readiness
+            updateListenButtonStatus(for: page)
             // preload 1 before and pagesToPreload ahead
             loadPages(in: page - 1 - (usesDoublePages ? 1 : 0)...page + pagesToPreload + (usesDoublePages ? 1 : 0))
         }
