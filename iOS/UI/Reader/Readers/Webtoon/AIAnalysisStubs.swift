@@ -114,3 +114,33 @@ class AudioPlaybackManager: NSObject {
 }
 
 
+// MARK: - Additional config stubs for DEBUG AppDelegate
+
+struct ColabConfiguration: Codable {
+	let endpointURL: URL
+	let apiKey: String?
+	let timeout: TimeInterval
+	let maxRetries: Int
+	let batchSize: Int
+
+	static let `default` = ColabConfiguration(
+		endpointURL: URL(string: "https://example.ngrok.io")!,
+		apiKey: nil,
+		timeout: 300.0,
+		maxRetries: 3,
+		batchSize: 10
+	)
+}
+
+fileprivate var __stubColabConfig: ColabConfiguration = .default
+
+extension AIAnalysisConfigManager {
+	var colabConfiguration: ColabConfiguration { __stubColabConfig }
+	func setColabConfiguration(_ config: ColabConfiguration) async { __stubColabConfig = config }
+}
+
+actor ColabSessionManager {
+	static let shared = ColabSessionManager()
+	func startSession(endpointURL: URL) async throws {}
+}
+
