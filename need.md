@@ -34,6 +34,7 @@ Modal (deployment) configuration
 Model weights and assets
 - MAGI v2: pulled from Hugging Face `ragavsachdeva/magiv2` at runtime (cached). Consider baking into image or pre-pulling into /models for faster cold starts.
 - GPT-SoVITS base model checkpoint(s) (later)
+ - MAGI_REVISION: Optional Hugging Face revision/commit to pin model code for security.
 - Optional: text normalization/tokenizer resources
 - Voice preview generation settings (sample text per language)
 

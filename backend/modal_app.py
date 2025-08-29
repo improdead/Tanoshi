@@ -20,6 +20,8 @@ import os
 import time
 import uuid
 from dataclasses import dataclass, field
+from typing import Set
+import re
 from typing import AsyncGenerator, Dict, List, Optional
 import hashlib
 import pathlib
@@ -165,6 +167,8 @@ class JobState:
     events: "asyncio.Queue[str]" = field(default_factory=asyncio.Queue)
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
+    uploaded_pages: Set[int] = field(default_factory=set)
+    magi_start_event: asyncio.Event = field(default_factory=asyncio.Event)
 
 
 JOBS: Dict[str, JobState] = {}
@@ -298,6 +302,7 @@ async def _simulate_processing(job: JobState) -> None:
 _MAGI_MODEL = None
 _MAGI_DEVICE = "cpu"
 MAGI_START_AFTER_N_PAGES = int(os.getenv("MAGI_START_AFTER_N_PAGES", "4"))
+MAGI_REVISION = os.getenv("MAGI_REVISION")  # optional HF commit hash/tag
 
 def _ensure_dirs(job_id: str) -> Dict[str, pathlib.Path]:
     root = pathlib.Path("/data") / "narration" / job_id
@@ -319,7 +324,12 @@ def _ensure_magi_loaded() -> None:
     import torch  # type: ignore
     _MAGI_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     # Trust remote code per HF card; run on available device
-    _MAGI_MODEL = AutoModel.from_pretrained("ragavsachdeva/magiv2", trust_remote_code=True)
+    if MAGI_REVISION:
+        _MAGI_MODEL = AutoModel.from_pretrained(
+            "ragavsachdeva/magiv2", trust_remote_code=True, revision=MAGI_REVISION
+        )
+    else:
+        _MAGI_MODEL = AutoModel.from_pretrained("ragavsachdeva/magiv2", trust_remote_code=True)
     try:
         _MAGI_MODEL.to(_MAGI_DEVICE)
     except Exception:
@@ -371,14 +381,16 @@ def _write_dummy_hls(job_id: str, page_index: int, duration: float = 12.3) -> pa
     return playlist
 
 async def _run_magi_for_job(job: JobState) -> None:
-    _ensure_magi_loaded()
+    # Load MAGI in a background thread to avoid blocking the event loop
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, _ensure_magi_loaded)
     dirs = _ensure_dirs(job.job_id)
-    # Wait for N pages before starting MAGI to cut TTFA
-    def uploaded_count() -> int:
-        return sum(1 for i in range(job.total) if (dirs["pages"] / f"{i:03d}.png").exists())
-
-    while uploaded_count() < min(MAGI_START_AFTER_N_PAGES, job.total):
-        await asyncio.sleep(0.1)
+    # Wait for N pages before starting MAGI to cut TTFA (event-driven)
+    if len(job.uploaded_pages) < min(MAGI_START_AFTER_N_PAGES, job.total):
+        try:
+            await asyncio.wait_for(job.magi_start_event.wait(), timeout=60.0)
+        except asyncio.TimeoutError:
+            pass
 
     # Build chapter list using all currently uploaded pages; missing ones will be added later in rolling passes
     page_indices: List[int] = []
@@ -631,6 +643,10 @@ async def upload_page(job_id: str, page_index: int, request: Request):
     dirs = _ensure_dirs(job_id)
     out = dirs["pages"] / f"{page_index:03d}.png"
     out.write_bytes(body)
+    # Mark uploaded and signal MAGI threshold if reached
+    job.uploaded_pages.add(page_index)
+    if len(job.uploaded_pages) >= min(MAGI_START_AFTER_N_PAGES, job.total):
+        job.magi_start_event.set()
 
     # Update state → extracting (MAGI will run shortly)
     page = job.pages.get(page_index)
@@ -660,6 +676,9 @@ async def get_playlist(job_id: str, page_index: int):
 @api.get("/v1/narration/jobs/{job_id}/audio/page-{page_index}/{segment}")
 async def get_segment(job_id: str, page_index: int, segment: str):
     dirs = _ensure_dirs(job_id)
+    # Validate segment strictly (e.g., seg-00001.ts, index.m3u8 is served by another route)
+    if not re.fullmatch(r"seg-\d+\.ts", segment):
+        raise HTTPException(status_code=400, detail="invalid segment name")
     safe = pathlib.Path(segment).name  # prevent path traversal
     path = dirs["audio"] / f"page-{page_index:03d}" / safe
     if not path.exists():
