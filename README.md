@@ -1,6 +1,8 @@
 # Aidoku (Tanoshi)
 A free and open source manga reading application for iOS, iPadOS, and macOS with AI-powered narration.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/improdead/Tanoshi)
+
 ## Features
 - [x] No ads
 - [x] Robust WASM source system
