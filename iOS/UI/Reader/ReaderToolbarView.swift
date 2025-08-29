@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SwiftUI
 
 class ReaderToolbarView: UIView {
     var currentPageValue: Int? {
@@ -26,6 +27,10 @@ class ReaderToolbarView: UIView {
     let sliderView = ReaderSliderView()
     private let currentPageLabel = UILabel()
     private let pagesLeftLabel = UILabel()
+    private var listenHost: UIHostingController<ListenToggleView>?
+    private var narrationVM: ReaderNarrationViewModel?
+    private var onListenStart: (() -> Void)?
+    private var onListenStop: (() -> Void)?
 
     init() {
         super.init(frame: .zero)
@@ -53,6 +58,13 @@ class ReaderToolbarView: UIView {
         sliderView.translatesAutoresizingMaskIntoConstraints = false
         sliderView.semanticContentAttribute = .playback // for rtl languages
         addSubview(sliderView)
+
+        // Embed Listen toggle (SwiftUI) at the bottom-leading corner of the toolbar
+        let host = UIHostingController(rootView: ListenToggleView(vm: ReaderNarrationViewModel()))
+        host.view.backgroundColor = .clear
+        host.view.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(host.view)
+        listenHost = host
     }
 
     func constrain() {
@@ -66,7 +78,11 @@ class ReaderToolbarView: UIView {
             sliderView.heightAnchor.constraint(equalToConstant: 12),
             sliderView.topAnchor.constraint(equalTo: topAnchor, constant: 10),
             sliderView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            sliderView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12)
+            sliderView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
+
+            // Listen toggle in bottom-leading to avoid overlapping slider/labels
+            listenHost!.view.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            listenHost!.view.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
     }
 
@@ -120,5 +136,15 @@ class ReaderToolbarView: UIView {
     func updateSliderPosition() {
         guard let currentPage = currentPage, let totalPages = totalPages else { return }
         sliderView.move(toValue: CGFloat(currentPage - 1) / max(CGFloat(totalPages - 1), 1))
+    }
+
+    // Inject VM and start/stop closures; refresh SwiftUI rootView accordingly
+    func setNarration(vm: ReaderNarrationViewModel, onStart: @escaping () -> Void, onStop: @escaping () -> Void) {
+        self.narrationVM = vm
+        self.onListenStart = onStart
+        self.onListenStop = onStop
+        if let host = listenHost {
+            host.rootView = ListenToggleView(vm: vm, onStart: onStart, onStop: onStop)
+        }
     }
 }

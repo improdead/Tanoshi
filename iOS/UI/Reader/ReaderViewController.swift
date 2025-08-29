@@ -9,6 +9,8 @@ import UIKit
 import SafariServices
 import SwiftUI
 import AidokuRunner
+import AVFoundation
+import Combine
 
 class ReaderViewController: BaseObservingViewController {
 
@@ -36,6 +38,14 @@ class ReaderViewController: BaseObservingViewController {
     private lazy var activityIndicator = UIActivityIndicatorView(style: .medium)
     private lazy var toolbarView = ReaderToolbarView()
     private var toolbarViewWidthConstraint: NSLayoutConstraint?
+
+    // Narration (Tanoshi)
+    private let narrationVM = ReaderNarrationViewModel()
+    private var narrationEnabled = false
+    private var narrationWindowStart: Int?
+    private var audioPlayer: AVPlayer?
+    private var adGateUntil: Date?
+    private var narrationPagesCancellable: AnyCancellable?
 
     private lazy var descriptionButtonController: UIHostingController<ReaderPageDescriptionButtonView> = {
         let buttonView = ReaderPageDescriptionButtonView(source: source, pages: [])
@@ -174,6 +184,13 @@ class ReaderViewController: BaseObservingViewController {
         navigationController?.isToolbarHidden = false
         navigationController?.toolbar.fitContentViewToToolbar()
 
+        // Wire Listen toggle
+        toolbarView.setNarration(vm: narrationVM, onStart: { [weak self] in
+            Task { await self?.startNarrationWindow() }
+        }, onStop: { [weak self] in
+            self?.stopNarration()
+        })
+
         // loading indicator
         activityIndicator.startAnimating()
         activityIndicator.hidesWhenStopped = true
@@ -208,6 +225,11 @@ class ReaderViewController: BaseObservingViewController {
     }
 
     override func observe() {
+        // Observe narration VM for page readiness
+        narrationPagesCancellable = narrationVM.$pages.sink { [weak self] _ in
+            self?.maybePlayForCurrentPage()
+        }
+
         addObserver(forName: "Reader.readingMode.\(manga.key)") { [weak self] _ in
             guard let self else { return }
             self.setReadingMode(UserDefaults.standard.string(forKey: "Reader.readingMode.\(self.manga.key)"))
@@ -584,6 +606,7 @@ extension ReaderViewController: ReaderHoldingDelegate {
         currentPage = page
         toolbarView.currentPage = page
         toolbarView.updateSliderPosition()
+        maybePlayForCurrentPage()
         if pages.upperBound >= totalPages {
             setCompleted()
         }
@@ -640,6 +663,7 @@ extension ReaderViewController: ReaderHoldingDelegate {
 
     func displayPage(_ page: Int) {
         toolbarView.displayPage(page)
+        maybePlayForCurrentPage()
     }
 
     func setSliderOffset(_ offset: CGFloat) {
@@ -659,6 +683,87 @@ extension ReaderViewController: ReaderHoldingDelegate {
         if UserDefaults.standard.bool(forKey: "Library.deleteDownloadAfterReading") {
             chaptersToRemoveDownload.append(chapter)
         }
+    }
+    // MARK: - Narration (Tanoshi)
+    private func startNarrationWindow() async {
+        guard !pages.isEmpty else { return }
+        narrationEnabled = true
+        let start = max(0, (currentPage > 0 ? currentPage - 1 : 0))
+        narrationWindowStart = start
+        let endExclusive = min(pages.count, start + 20)
+        let window = Array(pages[start..<endExclusive])
+
+        // Fetch/convert to PNG data for each page in order
+        var datas: [Data] = Array(repeating: Data(), count: window.count)
+        await withTaskGroup(of: (Int, Data?).self) { group in
+            for (i, p) in window.enumerated() {
+                group.addTask { [weak self] in (i, await self?.pngData(for: p)) }
+            }
+            for await (i, d) in group {
+                if let d { datas[i] = d }
+            }
+        }
+
+        adGateUntil = Date().addingTimeInterval(3) // Placeholder ad gate; backend adPlan can refine this
+        await narrationVM.begin(
+            chapterID: "\(source?.key ?? manga.sourceKey):\(chapter.key)",
+            pages: datas,
+            voicePack: TNVoicePack(Narrator: "sovits:narrator-v1", MC: "sovits:mc-v1")
+        )
+    }
+
+    private func stopNarration() {
+        narrationEnabled = false
+        narrationWindowStart = nil
+        adGateUntil = nil
+        audioPlayer?.pause()
+        audioPlayer = nil
+        narrationVM.cancel()
+    }
+
+    private func maybePlayForCurrentPage() {
+        guard narrationEnabled, let start = narrationWindowStart else { return }
+        guard let gate = adGateUntil, Date() >= gate else { return }
+        let absoluteIndex = max(0, (currentPage > 0 ? currentPage - 1 : 0))
+        guard absoluteIndex >= start else { return }
+        let rel = absoluteIndex - start
+        guard let snap = narrationVM.pages.first(where: { $0.index == rel && $0.state == .ready }), let urlStr = snap.audio, let url = URL(string: urlStr) else { return }
+        // Play page audio
+        if audioPlayer == nil || (audioPlayer?.currentItem?.asset as? AVURLAsset)?.url != url {
+            audioPlayer = AVPlayer(url: url)
+        }
+        audioPlayer?.play()
+    }
+
+    private func pngData(for page: Page) async -> Data? {
+        // 1) use in-memory image if present
+        #if os(iOS)
+        if let img = page.image {
+            return img.pngData()
+        }
+        #endif
+        // 2) fetch by imageURL
+        if let urlStr = page.imageURL, let url = URL(string: urlStr) {
+            do {
+                let (data, resp) = try await URLSession.shared.data(from: url)
+                if let http = resp as? HTTPURLResponse, http.statusCode >= 400 {
+                    LogManager.logger.error("page_fetch_http code=\(http.statusCode) url=\(urlStr)")
+                    return nil
+                }
+                // If not PNG, re-encode
+                if let http = resp as? HTTPURLResponse, let ctype = http.allHeaderFields["Content-Type"] as? String, ctype.lowercased().contains("png") {
+                    return data
+                }
+                #if os(iOS)
+                if let uiimg = UIImage(data: data) { return uiimg.pngData() }
+                #endif
+                return data // best effort
+            } catch {
+                LogManager.logger.error("page_fetch_err url=\(urlStr) err=\(error)")
+                return nil
+            }
+        }
+        return nil
     }
 }
 

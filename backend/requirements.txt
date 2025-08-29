@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic>=2
+pydantic-settings
+redis>=5
+aioboto3
+boto3
+blake3
+modal-client
+python-dotenv

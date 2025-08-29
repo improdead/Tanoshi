@@ -476,8 +476,18 @@
 		FBFA43AD2799DD110065A445 /* ReaderSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBFA43AC2799DD110065A445 /* ReaderSliderView.swift */; };
 		FBFDD40327838AB90055ED9F /* Sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBFDD40227838AB90055ED9F /* Sequence.swift */; };
 		FBFDD40427838AB90055ED9F /* Sequence.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBFDD40227838AB90055ED9F /* Sequence.swift */; };
-		FBFDF5F82DF799180064F603 /* AidokuRunner in Frameworks */ = {isa = PBXBuildFile; productRef = FBFDF5F72DF799180064F603 /* AidokuRunner */; };
-		FBFDF5FA2DF799340064F603 /* AidokuRunner in Frameworks */ = {isa = PBXBuildFile; productRef = FBFDF5F92DF799340064F603 /* AidokuRunner */; };
+FBFDF5F82DF799180064F603 /* AidokuRunner in Frameworks */ = {isa = PBXBuildFile; productRef = FBFDF5F72DF799180064F603 /* AidokuRunner */; };
+FBFDF5FA2DF799340064F603 /* AidokuRunner in Frameworks */ = {isa = PBXBuildFile; productRef = FBFDF5F92DF799340064F603 /* AidokuRunner */; };
+		BBBBBBBB0000000000000011 /* NarrationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000011 /* NarrationModels.swift */; };
+		BBBBBBBB0000000000000012 /* NarrationAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000012 /* NarrationAPI.swift */; };
+		BBBBBBBB0000000000000013 /* SSEClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000013 /* SSEClient.swift */; };
+		BBBBBBBB0000000000000014 /* PageUploader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000014 /* PageUploader.swift */; };
+		BBBBBBBB0000000000000015 /* ListenToggleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000015 /* ListenToggleView.swift */; };
+		BBBBBBBB0000000000000016 /* ReaderNarrationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000016 /* ReaderNarrationViewModel.swift */; };
+		BBBBBBBB0000000000000021 /* NarrationModels.swift (macOS) in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000011 /* NarrationModels.swift */; };
+		BBBBBBBB0000000000000022 /* NarrationAPI.swift (macOS) in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000012 /* NarrationAPI.swift */; };
+		BBBBBBBB0000000000000023 /* SSEClient.swift (macOS) in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000013 /* SSEClient.swift */; };
+		BBBBBBBB0000000000000024 /* PageUploader.swift (macOS) in Sources */ = {isa = PBXBuildFile; fileRef = AAAAAAAA0000000000000014 /* PageUploader.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -874,7 +884,13 @@
 		FBFA43AE2799DD260065A445 /* ReaderInfoPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderInfoPageView.swift; sourceTree = "<group>"; };
 		FBFAC3BB2996B292004D8489 /* af */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = af; path = af.lproj/Localizable.strings; sourceTree = "<group>"; };
 		FBFAC3BC2996B2CB004D8489 /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/Localizable.strings; sourceTree = "<group>"; };
-		FBFDD40227838AB90055ED9F /* Sequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sequence.swift; sourceTree = "<group>"; };
+FBFDD40227838AB90055ED9F /* Sequence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sequence.swift; sourceTree = "<group>"; };
+		AAAAAAAA0000000000000011 /* NarrationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationModels.swift; sourceTree = "<group>"; };
+		AAAAAAAA0000000000000012 /* NarrationAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NarrationAPI.swift; sourceTree = "<group>"; };
+		AAAAAAAA0000000000000013 /* SSEClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SSEClient.swift; sourceTree = "<group>"; };
+		AAAAAAAA0000000000000014 /* PageUploader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageUploader.swift; sourceTree = "<group>"; };
+		AAAAAAAA0000000000000015 /* ListenToggleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListenToggleView.swift; sourceTree = "<group>"; };
+		AAAAAAAA0000000000000016 /* ReaderNarrationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReaderNarrationViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1100,7 +1116,7 @@
 			);
 			sourceTree = "<group>";
 		};
-		FB1B482A277CE18D0056D02C /* Shared */ = {
+FB1B482A277CE18D0056D02C /* Shared */ = {
 			isa = PBXGroup;
 			children = (
 				91D7BEFB2DD7E4BB00898539 /* Aidoku.xcconfig */,
@@ -1114,6 +1130,7 @@
 				FBD6A4062858D33A007116C9 /* Tracking */,
 				FB7984162E0CA4FA000761A9 /* Upscaling */,
 				FB716DE8283D5F2000F1BB5D /* Logging */,
+				AAAAAAAA0000000000000001 /* Narration */,
 				FBD6A40128525C77007116C9 /* Localization */,
 				FB16E6262DF4D85500E09ED5 /* Utilities */,
 				FB1B4830277CE1920056D02C /* Assets.xcassets */,
@@ -1345,10 +1362,12 @@
 			path = Extensions;
 			sourceTree = "<group>";
 		};
-		FB3DDF7C2E134F8100A64897 /* Reader */ = {
+FB3DDF7C2E134F8100A64897 /* Reader */ = {
 			isa = PBXGroup;
 			children = (
 				FB1B51A728E3405D00D3CE0E /* ReaderSettingsView.swift */,
+				AAAAAAAA0000000000000015 /* ListenToggleView.swift */,
+				AAAAAAAA0000000000000016 /* ReaderNarrationViewModel.swift */,
 			);
 			path = Reader;
 			sourceTree = "<group>";
@@ -1952,7 +1971,7 @@
 			path = Imports;
 			sourceTree = "<group>";
 		};
-		FBF9DC0328205FAD0056FA9A /* Downloads */ = {
+FBF9DC0328205FAD0056FA9A /* Downloads */ = {
 			isa = PBXGroup;
 			children = (
 				FBE7813128308DCA0038C0E3 /* Models */,
@@ -1962,6 +1981,41 @@
 				FBE78128282F481A0038C0E3 /* DownloadCache.swift */,
 			);
 			path = Downloads;
+			sourceTree = "<group>";
+		};
+		AAAAAAAA0000000000000001 /* Narration */ = {
+			isa = PBXGroup;
+			children = (
+				AAAAAAAA0000000000000002 /* Models */,
+				AAAAAAAA0000000000000003 /* Networking */,
+				AAAAAAAA0000000000000004 /* Upload */,
+			);
+			path = Narration;
+			sourceTree = "<group>";
+		};
+		AAAAAAAA0000000000000002 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AAAAAAAA0000000000000011 /* NarrationModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AAAAAAAA0000000000000003 /* Networking */ = {
+			isa = PBXGroup;
+			children = (
+				AAAAAAAA0000000000000012 /* NarrationAPI.swift */,
+				AAAAAAAA0000000000000013 /* SSEClient.swift */,
+			);
+			path = Networking;
+			sourceTree = "<group>";
+		};
+		AAAAAAAA0000000000000004 /* Upload */ = {
+			isa = PBXGroup;
+			children = (
+				AAAAAAAA0000000000000014 /* PageUploader.swift */,
+			);
+			path = Upload;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -2484,7 +2538,13 @@
 				FBE3E4942DD2487000EF8145 /* HomeImageScrollerView.swift in Sources */,
 				FB79841D2E0DD183000761A9 /* TapZone.swift in Sources */,
 				FB58C6B22999B44D00A6F49F /* WebViewViewController.swift in Sources */,
-				FB72500F27CAAC6F0037F1C9 /* BackupManager.swift in Sources */,
+FB72500F27CAAC6F0037F1C9 /* BackupManager.swift in Sources */,
+				BBBBBBBB0000000000000011 /* NarrationModels.swift in Sources */,
+				BBBBBBBB0000000000000012 /* NarrationAPI.swift in Sources */,
+				BBBBBBBB0000000000000013 /* SSEClient.swift in Sources */,
+				BBBBBBBB0000000000000014 /* PageUploader.swift in Sources */,
+				BBBBBBBB0000000000000015 /* ListenToggleView.swift in Sources */,
+				BBBBBBBB0000000000000016 /* ReaderNarrationViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2508,7 +2568,11 @@
 				FBED233427C095170095D0C0 /* SettingItem.swift in Sources */,
 				FB0CAA5E28A998690024561A /* CoreDataManager+History.swift in Sources */,
 				FB6340BC2792202B0072A2A2 /* Listing.swift in Sources */,
-				FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
+FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
+				BBBBBBBB0000000000000021 /* NarrationModels.swift (macOS) in Sources */,
+				BBBBBBBB0000000000000022 /* NarrationAPI.swift (macOS) in Sources */,
+				BBBBBBBB0000000000000023 /* SSEClient.swift (macOS) in Sources */,
+				BBBBBBBB0000000000000024 /* PageUploader.swift (macOS) in Sources */,
 				FB72501D27CAACC00037F1C9 /* BackupChapter.swift in Sources */,
 				FB14B12C2DF4D27E0067E4D4 /* CoreDataManager+MangaUpdates.swift in Sources */,
 				FB67EE6727F4D7BF00C468EA /* WasmGlobalStore.swift in Sources */,
