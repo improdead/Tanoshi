@@ -91,8 +91,8 @@
   - iOS/New/* for current SwiftUI screens and view models.
 
   What’s new (Tanoshi Narration integration)
-  - Backend scaffold (Python FastAPI + Modal) lives under backend/ with:
-    - backend/modal_app.py: Modal app with SSE endpoints, presigned uploads, Redis-backed snapshots + idempotency (in-memory fallback), and MAGI/SoVITS orchestration placeholders.
+  - Backend (Python FastAPI + Modal) lives under backend/ with:
+    - backend/modal_app.py: Modal app with SSE endpoints, direct PNG PUT uploads into a Modal Volume, Redis-backed snapshots + idempotency (in-memory fallback), MAGI v2 OCR integrated (Hugging Face), and TTS placeholder (dummy HLS).
     - backend/server.py: Local FastAPI server entrypoint (uvicorn) to run without Modal.
     - backend/requirements.txt: Python dependencies.
     - backend/.env.example: Example environment configuration for local dev.
@@ -100,10 +100,10 @@
   - Shared Swift module (client): Shared/Narration/
     - Models: Shared/Narration/Models/NarrationModels.swift (Codable request/response types).
     - Networking: Shared/Narration/Networking/NarrationAPI.swift (REST), Shared/Narration/Networking/SSEClient.swift (SSE streaming).
-    - Upload: Shared/Narration/Upload/PageUploader.swift (presigned PNG PUTs with content-type/size validation).
+    - Upload: Shared/Narration/Upload/PageUploader.swift (direct PNG PUTs to API with content-type/size validation).
   - iOS UI + Reader wiring:
     - ListenToggleView.swift is embedded in ReaderToolbarView on iOS. The Reader injects closures to start/stop and a shared ReaderNarrationViewModel instance.
-    - On start, the Reader collects the current page and next 19 pages (up to 20), converts to PNG (in-memory image or fetched by URL), uploads via presigned PUT, and subscribes to SSE.
+    - On start, the Reader collects the current page and next 19 pages (up to 20), converts to PNG (in-memory image or fetched by URL), uploads via direct PUT to API, and subscribes to SSE.
     - Playback: When a page becomes ready, and the ad gate has elapsed, audio is auto-played for the page the user is currently viewing via AVPlayer.
     - The default backend base URL is https://api.tanoshi.app (override via UserDefaults key Tanoshi.APIBase). The app assumes Modal in production; local backend is not used by default.
   - See need.md for env, infra, and open decisions.
@@ -119,7 +119,7 @@
   - Build the “Aidoku (iOS)” scheme. The Listen toggle UI is provided and embedded into ReaderToolbarView on iOS.
   - Reader integration
     - Start: On toggle ON, the app collects the current page and the next 19 pages (up to 20 total) for the active chapter window.
-    - Upload: Pages are uploaded via presigned PUTs (PNG only) and mapped by the index provided in the upload plan (plan.index).
+    - Upload: Pages are uploaded via direct PUTs (PNG only) to the API and mapped by the index provided in the upload plan (plan.index).
     - SSE: The client subscribes to /v1/narration/jobs/{job_id}/events and updates per-page status and window progress.
     - Playback: When the user is on a page, the app auto-plays that page’s audio as soon as it’s ready and after the ad gate. Playback uses AVPlayer with HLS URLs (page-{index}/index.m3u8).
   - Config
@@ -136,25 +136,7 @@
 
   WARP.md — Tanoshi Narration (Python on Modal: MAGI v2 → GPT-SoVITS)
 
-  Implementation status at a glance
-  - Implemented now (stubbed where noted)
-    - Session start/next endpoints with presigned PNG uploads (placeholders)
-    - SSE events: page_status, page_ready, progress, job_done; initial state burst on connect
-    - Snapshot endpoint; Redis snapshot persistence with TTL; in-memory fallback + TTL cleanup
-    - Rate limiting (per-IP, windowed) for start/next; Redis-backed when available
-    - Idempotency for /session/start (dedupe by chapter_id + window + voice_pack) via Redis (fallback in-memory)
-    - Voices register/get (presigned refs, dataset only for few_shot)
-    - Env-driven CDN_BASE_URL in audio URLs
-  - Not implemented (to be built)
-    - Real MAGI v2 OCR/speaker extraction and GPT-SoVITS synthesis pipeline
-    - Real presigned S3/MinIO URLs and upload validation hooks
-    - Multi-worker orchestration, prioritization (current page ±2), retries
-    - Persistent job store (DB/Redis as source of truth across restarts/scale-out)
-  - Suggestions / next steps
-    - Add separate IDEMP_TTL_SECONDS if different from job TTL is desired
-    - Consider a /v1/narration/jobs/{job_id} metadata endpoint (created_at, updated_at)
-    - Wire rolling windows auto-trigger from iOS at ≥ start+15
-    - Optional single-file per-page audio (m4a) for simpler offline cache
+  
 
   This file guides the manga → audiobook pipeline that runs when a reader toggles Listen in Tanoshi.
   Backend: Python (FastAPI) deployed on Modal. All endpoints are implemented in Python; GPU workers run MAGI v2 and GPT-SoVITS in separate containers.
@@ -171,15 +153,15 @@
 
   Status: Per-page chips show Queued / Extracting / TTS / Ready / Error + a slim global progress bar
 
-  Storage: Per-page HLS under audio/{job_id}/page-{index}/index.m3u8
+  Storage: Per-page HLS under audio/{job_id}/page-{index}/index.m3u8 (MIME: application/vnd.apple.mpegurl; segments: video/MP2T)
 
   SSE: Real-time job/status events drive UI progress
 
   Endpoints (stateless, SSE-driven)
-  Implementation: Python (FastAPI/Starlette) on Modal; SSE via text/event-stream; presigned S3-compatible URLs for PNG uploads and HLS reads.
+  Implementation: Python (FastAPI/Starlette) on Modal; SSE via text/event-stream. For Modal-only MVP we use direct API PUTs into a Modal Volume (no S3/CDN yet). HLS is packaged with ffmpeg into TS segments with independent segments.
   POST /v1/narration/session/start
 
-  Begin a 20-page window. In the stub, processing starts immediately (simulating cold-start hide); production will start MAGI after an arrival threshold (e.g., N/20 uploads). Returns 20 presigned PUT URLs for PNG upload.
+  Begin a 20-page window. In Modal-only MVP, returns 20 direct PUT URLs to upload PNGs into a Modal Volume. Processing starts in the background (MAGI waits for uploads).
 
   Body
 
@@ -199,15 +181,15 @@
   {
     "job_id": "job_abc",
     "upload": {
-      "mode": "presigned",
+      "mode": "direct",
       "pages": [
-        {"index":0,"put_url":"https://...","content_type":"image/png","max_bytes":3000000},
-        {"index":1,"put_url":"https://..."},
-        {"index":19,"put_url":"https://..."}
+        {"index":0,"put_url":"/v1/narration/jobs/job_abc/pages/0","content_type":"image/png","max_bytes":3000000},
+        {"index":1,"put_url":"/v1/narration/jobs/job_abc/pages/1"},
+        {"index":19,"put_url":"/v1/narration/jobs/job_abc/pages/19"}
       ]
     },
-    "status_sse": "https://api.tanoshi.app/v1/narration/jobs/job_abc/events",
-    "audio_url_template": "https://cdn.tanoshi.app/audio/job_abc/page-{index}/index.m3u8",
+    "status_sse": "/v1/narration/jobs/job_abc/events",
+    "audio_url_template": "/v1/narration/jobs/job_abc/audio/page-{index}/index.m3u8",
     "adPlan": {"kind":"placeholder","duration_hint":3}
   }
 
@@ -347,6 +329,7 @@
 
   {
     "page_index": 7,
+    "cache_key": "<blake3>",
     "lines": [
       {"speaker":"MC","text":"...","lang":"ja","role":"speech"},
       {"speaker":"Narrator","text":"...","role":"narration"}
@@ -365,8 +348,8 @@
     "pitch":0.0
   }
 
-  Storage layout (object store)
-  /narration/{job_id}/
+  Storage layout (Modal Volume /data; standardized TS segments)
+  /data/narration/{job_id}/
     pages/
       000.png … 019.png
     magi/
@@ -374,9 +357,9 @@
     audio/
       page-000/
         index.m3u8
-        seg-00001.ts …
+        seg-00001.ts …   # video/MP2T
       page-001/ …
-    status/
+    status/ (future)
       snapshot.json
 
   /voices/{voice_id}/
@@ -537,3 +520,41 @@
   - Lock HLS as page format (recommended over single-clip).
   - Define training quotas and moderation for user-submitted voices (legal/consent).
   - Add /session/next UI wiring for rolling windows.
+  
+  Appendix — Implementation status & recent changes
+  
+  What’s implemented (works in the current repo)
+  - iOS Reader wiring: ListenToggle embedded in ReaderToolbarView; ReaderViewController drives start/stop, uploads, SSE subscription, and auto-play after ad gate.
+  - Shared narration client: models, REST client, SSE client, and uploader supports direct PUT URLs with content-type/size enforcement.
+  - Backend (Modal-only MVP): start/next endpoints, direct PNG PUT upload to Modal Volume, MAGI v2 inference via HF (`ragavsachdeva/magiv2`, trust_remote_code=True) across chapter pages (begin after N uploads for lower TTFA) with autocast+no_grad when CUDA available, dummy HLS generation with ffmpeg (`-f hls -hls_time 2 -hls_segment_type mpegts -hls_flags independent_segments -hls_list_size 0`), SSE (page_status/page_ready/progress/job_done) with initial state burst, snapshot endpoint.
+  - Redis (optional): snapshot persistence with TTL and idempotency for /session/start; per-IP rate limiting for start/next (in-memory fallbacks exist).
+  - Docs: WARP.md reorganized with Modal-only flow; need.md lists required env/secrets/infra decisions.
+  
+  Not implemented yet (to build next)
+  - GPT-SoVITS voice synthesis (currently dummy HLS silence is generated). Voice cloning/training TBD.
+  - Real presigned S3/MinIO URLs and server-side object validation (Modal-only now).
+  - Orchestration for multi-workers, prioritization (current page ±2), retries, and persistent job store as source of truth.
+  - iOS rolling windows: auto-trigger /v1/narration/session/next at page ≥ start+15 (optional feature flag).
+  - macOS Reader mounting point for Listen toggle and playback UI.
+
+  Technical implementation gaps (stubs only)
+  - Processing is fully simulated: _simulate_processing function just sleeps and emits fake events; NarrationService.synth returns URL template only.
+  - No actual model loading: download_models and NarrationService.load methods are stubs with commented-out code.
+  
+  Recent changes (pushed)
+  - Commit: 548bf1a — “Add narration features and backend improvements”.
+  - Scope: 16 files changed, 1,761 insertions, 291 deletions.
+  - New files
+    - Shared/Narration/Models/NarrationModels.swift
+    - Shared/Narration/Networking/NarrationAPI.swift
+    - Shared/Narration/Networking/SSEClient.swift
+    - Shared/Narration/Upload/PageUploader.swift
+    - iOS/New/Views/Reader/ListenToggleView.swift
+    - iOS/New/Views/Reader/ReaderNarrationViewModel.swift
+    - backend/.env.example, backend/README.md, backend/modal_app.py, backend/requirements.txt, backend/server.py
+    - need.md
+  - Modified files
+    - Aidoku.xcodeproj/project.pbxproj (registered new files in targets)
+    - WARP.md (organized guidance; implementation status; SSE/Redis/TTL notes)
+    - iOS/UI/Reader/ReaderToolbarView.swift (hosts Listen toggle)
+        - iOS/UI/Reader/ReaderViewController.swift (toggle wiring, uploads, SSE playback, ad gate)

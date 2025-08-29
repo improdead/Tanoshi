@@ -4,11 +4,7 @@ This document lists secrets, environment variables, infrastructure choices, and 
 
 Secrets and environment variables (backend)
 - API_BASE_URL: Public base URL for the API (e.g., https://api.tanoshi.app)
-- CDN_BASE_URL: Public base URL for CDN serving audio/HLS (e.g., https://cdn.tanoshi.app)
-- BUCKET_URL: S3-compatible endpoint (e.g., https://s3.us-east-1.amazonaws.com or http://minio:9000)
-- BUCKET_REGION: S3 region (e.g., us-east-1)
-- BUCKET_NAME: Bucket where narration artifacts are stored
-- AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY: Credentials for object storage (omit if using instance/IAM roles)
+- CDN_BASE_URL: Public base URL for CDN serving audio/HLS (e.g., https://cdn.tanoshi.app). Modal-only MVP serves from API paths; CDN not required yet.
 - REDIS_URL: Redis connection string (e.g., redis://host:6379/0)
   - Redis keys used:
     - rl:{kind}:{ip} – per-IP rate limit counters
@@ -16,23 +12,28 @@ Secrets and environment variables (backend)
     - narration:idemp:{sha256} – idempotency key for /session/start
   - TTLs:
     - JOB_TTL_SECONDS (default 3600s) – snapshot expiry and in-memory job eviction
+    - IDEMP_TTL_SECONDS (default mirrors JOB_TTL_SECONDS) – idempotency dedupe window (e.g., 300–600s)
     - RATE_LIMIT_WINDOW_SECONDS (default 60s)
     - RATE_LIMIT_START_MAX (default 10), RATE_LIMIT_NEXT_MAX (default 20)
 - CORS_ORIGINS: Comma-separated allowed origins (include localhost and custom URL schemes used by the app)
 - LOG_LEVEL: Optional (info|debug|warning|error) for backend logging
 - SENTRY_DSN: Optional Sentry DSN for error reporting
 
+Modal-only volumes
+- DATA_VOLUME: Modal volume name for runtime data (defaults to tanoshi-data) mounted at /data
+- MODELS_VOLUME: Modal volume name for models (defaults to tanoshi-models) mounted at /models
+
 Modal (deployment) configuration
 - Modal token set locally (modal token set) and service account for CI/CD if needed
 - Image pinning: CUDA/cuDNN, torch/torchaudio versions
-- Volumes: Name for persistent model volume (e.g., tanoshi-models) mounted at /models
+- Volumes: Names for persistent volumes (DATA_VOLUME at /data, MODELS_VOLUME at /models)
 - GPU type: L4 (default) or A10G/A100 depending on performance/cost targets
-- Autoscaling: min_containers and scaledown_window per service (MAGI v2, GPT-SoVITS)
-- Concurrency: per-worker limits for MAGI and SoVITS
+- Autoscaling: min_containers and scaledown_window for narration API (optional; default scale-to-zero)
+- Concurrency: per-worker limits for MAGI and SoVITS (SoVITS later)
 
 Model weights and assets
-- MAGI v2 weights checkpoint(s): path(s)/URI(s) to download into /models
-- GPT-SoVITS base model checkpoint(s)
+- MAGI v2: pulled from Hugging Face `ragavsachdeva/magiv2` at runtime (cached). Consider baking into image or pre-pulling into /models for faster cold starts.
+- GPT-SoVITS base model checkpoint(s) (later)
 - Optional: text normalization/tokenizer resources
 - Voice preview generation settings (sample text per language)
 
@@ -43,10 +44,15 @@ Voice packs (defaults and catalog)
 - Quotas: limits per user/series for voice training and usage
 
 Storage and CDN
-- CDN provider and domain for audio (CDN_BASE_URL)
-- Bucket policy (PUT limits, content-type enforcement, lifecycle rules for cleanup)
-- HLS path/versioning strategy: audio/{job_id}/page-{index}/*
-- TTLs for presigned URLs; cache-control headers for HLS playlists and segments
+- Modal-only MVP stores runtime artifacts under /data (Modal Volume):
+  - /data/narration/{job_id}/pages/*.png
+  - /data/narration/{job_id}/magi/page-*.json
+  - /data/narration/{job_id}/audio/page-*/{index.m3u8, seg-*.ts}
+- CDN/S3 not required yet; switch later for scale.
+
+Performance knobs
+- MAGI_START_AFTER_N_PAGES (default 4): start MAGI once N pages uploaded to reduce TTFA.
+- Use `torch.autocast("cuda", dtype=torch.float16)` and `torch.no_grad()` for inference when CUDA is available.
 
 Rate limiting and security
 - Per-device/IP rate limits for /session/start, /session/next, and uploads

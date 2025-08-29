@@ -8,3 +8,9 @@ boto3
 blake3
 modal-client
 python-dotenv
+Pillow
+numpy
+soundfile
+torch==2.3.1
+torchaudio==2.3.1
+transformers==4.43.3
