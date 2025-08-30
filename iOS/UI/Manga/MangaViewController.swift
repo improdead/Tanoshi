@@ -94,7 +94,7 @@ class MangaViewController: BaseTableViewController {
         }
         updateDataSource() // set "no chapters" header
 
-        Task {
+        Task { @MainActor in
             // load details if not in library
             let inLibrary = await CoreDataManager.shared.container.performBackgroundTask { context in
                 CoreDataManager.shared.hasLibraryManga(

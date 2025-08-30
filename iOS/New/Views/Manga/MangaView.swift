@@ -497,8 +497,6 @@ extension MangaView {
                 toolbarMarkMenu
             }
 
-            ToolbarSpacer(.flexible, placement: .bottomBar)
-
             if !viewModel.manga.isLocal() {
                 ToolbarItem(placement: .bottomBar) {
                     toolbarDownloadButton

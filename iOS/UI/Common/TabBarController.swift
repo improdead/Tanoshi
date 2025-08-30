@@ -31,7 +31,6 @@ class TabBarController: UITabBarController {
             let searchTab = UISearchTab { _ in
                 searchViewController
             }
-            searchTab.automaticallyActivatesSearch = true
             tabs = [
                 UITab(
                     title: NSLocalizedString("LIBRARY"),

@@ -2021,9 +2021,9 @@ FBF9DC0328205FAD0056FA9A /* Downloads */ = {
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		FB1B4834277CE1920056D02C /* Aidoku (iOS) */ = {
+		FB1B4834277CE1920056D02C /* Tanoshi (iOS) */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FB1B484A277CE1920056D02C /* Build configuration list for PBXNativeTarget "Aidoku (iOS)" */;
+			buildConfigurationList = FB1B484A277CE1920056D02C /* Build configuration list for PBXNativeTarget "Tanoshi (iOS)" */;
 			buildPhases = (
 				FB1B4831277CE1920056D02C /* Sources */,
 				FB1B4832277CE1920056D02C /* Frameworks */,
@@ -2034,7 +2034,7 @@ FBF9DC0328205FAD0056FA9A /* Downloads */ = {
 			);
 			dependencies = (
 			);
-			name = "Aidoku (iOS)";
+			name = "Tanoshi (iOS)";
 			packageProductDependencies = (
 				FB7B7ED7278CE949001E6EAF /* ZIPFoundation */,
 				FB17114A296770CC00AD523D /* NukeUI */,
@@ -2046,13 +2046,13 @@ FBF9DC0328205FAD0056FA9A /* Downloads */ = {
 				FBAED40B2E3A762800B81E74 /* SwiftUIIntrospect */,
 				FB2C83982E43F074003CA85F /* SwiftSoup */,
 			);
-			productName = "Aidoku (iOS)";
+			productName = "Tanoshi (iOS)";
 			productReference = FB1B4835277CE1920056D02C /* Aidoku.app */;
 			productType = "com.apple.product-type.application";
 		};
-		FB1B483A277CE1920056D02C /* Aidoku (macOS) */ = {
+		FB1B483A277CE1920056D02C /* Tanoshi (macOS) */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FB1B484D277CE1920056D02C /* Build configuration list for PBXNativeTarget "Aidoku (macOS)" */;
+			buildConfigurationList = FB1B484D277CE1920056D02C /* Build configuration list for PBXNativeTarget "Tanoshi (macOS)" */;
 			buildPhases = (
 				FB1B4837277CE1920056D02C /* Sources */,
 				FB1B4838277CE1920056D02C /* Frameworks */,
@@ -2062,13 +2062,13 @@ FBF9DC0328205FAD0056FA9A /* Downloads */ = {
 			);
 			dependencies = (
 			);
-			name = "Aidoku (macOS)";
+			name = "Tanoshi (macOS)";
 			packageProductDependencies = (
 				FB6340C8279246D50072A2A2 /* ZIPFoundation */,
 				FB14B1342DF4D4E70067E4D4 /* Nuke */,
 				FBFDF5F92DF799340064F603 /* AidokuRunner */,
 			);
-			productName = "Aidoku (macOS)";
+			productName = "Tanoshi (macOS)";
 			productReference = FB1B483B277CE1920056D02C /* Aidoku.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -2155,8 +2155,8 @@ FBF9DC0328205FAD0056FA9A /* Downloads */ = {
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				FB1B4834277CE1920056D02C /* Aidoku (iOS) */,
-				FB1B483A277CE1920056D02C /* Aidoku (macOS) */,
+				FB1B4834277CE1920056D02C /* Tanoshi (iOS) */,
+				FB1B483A277CE1920056D02C /* Tanoshi (macOS) */,
 			);
 		};
 /* End PBXProject section */
@@ -2879,7 +2879,7 @@ FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iOS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Aidoku;
+				INFOPLIST_KEY_CFBundleDisplayName = Tanoshi;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Aidoku needs FaceID permissions for user-defined settings";
@@ -2896,7 +2896,7 @@ FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.7.1;
-				PRODUCT_NAME = Aidoku;
+				PRODUCT_NAME = Tanoshi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2921,7 +2921,7 @@ FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = iOS/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Aidoku;
+				INFOPLIST_KEY_CFBundleDisplayName = Tanoshi;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = NO;
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Aidoku needs FaceID permissions for user-defined settings";
@@ -2938,7 +2938,7 @@ FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 0.7.1;
-				PRODUCT_NAME = Aidoku;
+				PRODUCT_NAME = Tanoshi;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -2973,7 +2973,7 @@ FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 0.1;
-				PRODUCT_NAME = Aidoku;
+				PRODUCT_NAME = Tanoshi;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -3006,7 +3006,7 @@ FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 0.1;
-				PRODUCT_NAME = Aidoku;
+				PRODUCT_NAME = Tanoshi;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -3025,7 +3025,7 @@ FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FB1B484A277CE1920056D02C /* Build configuration list for PBXNativeTarget "Aidoku (iOS)" */ = {
+		FB1B484A277CE1920056D02C /* Build configuration list for PBXNativeTarget "Tanoshi (iOS)" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FB1B484B277CE1920056D02C /* Debug */,
@@ -3034,7 +3034,7 @@ FB14B1262DF4CFE90067E4D4 /* UIKitShim.swift in Sources */,
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FB1B484D277CE1920056D02C /* Build configuration list for PBXNativeTarget "Aidoku (macOS)" */ = {
+		FB1B484D277CE1920056D02C /* Build configuration list for PBXNativeTarget "Tanoshi (macOS)" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				FB1B484E277CE1920056D02C /* Debug */,

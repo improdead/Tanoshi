@@ -45,14 +45,15 @@ let base = URL(string: UserDefaults.standard.string(forKey: "Tanoshi.APIBase") ?
             self.progress = TNProgress(done: 0, total: 20)
             LogManager.logger.info("narration_start job=\(res.job_id)")
 
-            // Upload PNGs if provided
+            // Upload PNGs if provided. Map by plan.index -> pages[plan.index]
             if !pages.isEmpty {
                 let uploader = TNPageUploader()
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     for plan in res.upload.pages {
-                        if let data = pages.first(where: { _ in true }) { // TODO: map by index
-                            group.addTask { try await uploader.upload(pageData: data, to: plan) }
-                        }
+                        let idx = plan.index
+                        guard idx >= 0 && idx < pages.count else { continue }
+                        let data = pages[idx]
+                        group.addTask { try await uploader.upload(pageData: data, to: plan) }
                     }
                     try await group.waitForAll()
                 }
@@ -101,4 +102,3 @@ let base = URL(string: UserDefaults.standard.string(forKey: "Tanoshi.APIBase") ?
         }
     }
 }
-

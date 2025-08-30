@@ -49,6 +49,15 @@ class Logger {
         }
     }
 
+    // Dedup state to avoid flooding logs with identical messages
+    private var lastMessage: String?
+    private var lastLevel: LogType = .default
+    private var lastTimestamp: TimeInterval = 0
+    private var repeatCount: Int = 0
+
+    // Suppress identical messages within this window (seconds)
+    private let dedupWindow: TimeInterval = 2.0
+
     init(store: LogStore = LogStore(), streamUrl: URL? = nil) {
         self.store = store
         self.streamUrl = streamUrl
@@ -71,12 +80,42 @@ class Logger {
         }
     }
 
+    private func flushRepeatSummaryIfNeeded(now: TimeInterval) {
+        if repeatCount > 0, let lastMessage {
+            let summary = "(previous) \(lastMessage) — repeated \(repeatCount)x"
+            if printLogs {
+                let prefix = lastLevel != .default ? "[\(lastLevel.toString())] " : ""
+                print("\(prefix)\(summary)")
+            }
+            store.addEntry(level: lastLevel, message: summary)
+            repeatCount = 0
+        }
+    }
+
     func log(level: LogType = .default, _ message: String) {
+        let now = Date().timeIntervalSince1970
+        if let last = lastMessage, last == message {
+            if now - lastTimestamp <= dedupWindow {
+                repeatCount += 1
+                lastTimestamp = now
+                return
+            } else {
+                // Window elapsed; emit summary before logging again
+                flushRepeatSummaryIfNeeded(now: now)
+            }
+        } else {
+            // Different message; flush any pending summary
+            flushRepeatSummaryIfNeeded(now: now)
+        }
+
         if printLogs {
             let prefix = level != .default ? "[\(level.toString())] " : ""
             print("\(prefix)\(message)")
         }
         store.addEntry(level: level, message: message)
+        lastMessage = message
+        lastLevel = level
+        lastTimestamp = now
     }
 
     func debug(_ message: String) {

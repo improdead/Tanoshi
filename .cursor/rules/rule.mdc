@@ -1,0 +1,5 @@
+---
+description:WARP.md make sure to watch this and (make sure to add well sophisticated (no need for error fall back but error hangling so I can debug is important)) and also it is important to leave well writen pseudocode and for placeholders or things that you are not sure of write them in down what do I need.md and also write what have you done in WARP.md
+globs:WARP.md
+alwaysApply: true
+---

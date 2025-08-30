@@ -9,6 +9,7 @@ import UIKit
 import SafariServices
 import SwiftUI
 import AidokuRunner
+import ZIPFoundation
 import AVFoundation
 import Combine
 
@@ -742,8 +743,30 @@ extension ReaderViewController: ReaderHoldingDelegate {
             return img.pngData()
         }
         #endif
-        // 2) fetch by imageURL
-        if let urlStr = page.imageURL, let url = URL(string: urlStr) {
+        // 2) prefer ZIP/CBZ extraction if available (local sources)
+        if let zipStr = page.zipURL, let zipURL = URL(string: zipStr), let filePath = page.imageURL {
+            do {
+                let archive = try Archive(url: zipURL, accessMode: .read)
+                guard let entry = archive[filePath] else { return nil }
+                var data = Data()
+                _ = try archive.extract(entry, consumer: { chunk in data.append(chunk) })
+                #if os(iOS)
+                if let img = UIImage(data: data) { return img.pngData() }
+                #endif
+                return data
+            } catch {
+                LogManager.logger.error("zip_extract_err url=\(zipStr) path=\(filePath) err=\(error)")
+            }
+        }
+        // 3) fetch by imageURL (only absolute or aidoku-image file URLs)
+        if let urlStr = page.imageURL {
+            // aidoku-image:// -> file URL
+            if let fileURL = URL(string: urlStr)?.toAidokuFileUrl() {
+                do { return try Data(contentsOf: fileURL) } catch { return nil }
+            }
+            guard let url = URL(string: urlStr), ["http","https"].contains(url.scheme?.lowercased() ?? "") else {
+                return nil
+            }
             do {
                 let (data, resp) = try await URLSession.shared.data(from: url)
                 if let http = resp as? HTTPURLResponse, http.statusCode >= 400 {
