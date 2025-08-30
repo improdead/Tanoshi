@@ -55,6 +55,9 @@ class Chapter: Codable, Identifiable {
     }
 }
 
+// Chapter is used on main/UI paths; allow crossing task boundaries when captured.
+extension Chapter: @unchecked Sendable {}
+
 extension Chapter: KVCObject {
     func valueByPropertyName(name: String) -> Any? {
         switch name {

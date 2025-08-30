@@ -2,6 +2,7 @@ fastapi
 uvicorn
 pydantic>=2
 pydantic-settings
+python-multipart
 redis>=5
 aioboto3
 boto3

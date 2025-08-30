@@ -88,8 +88,9 @@ struct ListingsHeaderView: View {
                 } else {
                     listings.map { $0.name }
                 }
-                ForEach(options.indices, id: \.self) { offset in
-                    let option = options[offset]
+                ForEach(Array(options.enumerated()), id: \.offset) { pair in
+                    let offset = pair.offset
+                    let option = pair.element
                     let active = selectedListing == offset
                     Button {
                         selectedListing = offset
@@ -100,22 +101,17 @@ struct ListingsHeaderView: View {
                             .font(.footnote.weight(.medium))
                             .foregroundStyle(active ? Color.white : Color.primary)
 
-                        if #available(iOS 26.0, *) {
-                            label
-                                .glassEffect(active ? .regular.tint(.accentColor) : .regular)
-                        } else {
-                            label
-                                .background(
-                                    RoundedRectangle(cornerRadius: 100)
-                                        .fill(
-                                            Color(
-                                                uiColor: active
-                                                    ? .tintColor
-                                                    : .secondarySystemFill
-                                            )
+                        label
+                            .background(
+                                RoundedRectangle(cornerRadius: 100)
+                                    .fill(
+                                        Color(
+                                            uiColor: active
+                                                ? .tintColor
+                                                : .secondarySystemFill
                                         )
-                                )
-                        }
+                                    )
+                            )
                     }
                 }
             }

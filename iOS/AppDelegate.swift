@@ -81,6 +81,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     ) -> Bool {
         UserDefaults.standard.register(
             defaults: [
+                // Narration backend base (dev default). Change before release if needed.
+                "Tanoshi.APIBase": "https://daosenli1998--api.modal.run",
                 "isSideloaded": Self.isSideloaded, // for icloud sync setting
 
                 "General.incognitoMode": false,
@@ -339,7 +341,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             }
         } else if
             SourceManager.shared.localSourceInstalled
-                && (url.pathExtension == "cbz" || url.pathExtension == "zip")
+                && ["cbz", "zip", "pdf"].contains(url.pathExtension.lowercased())
         {
             Task {
                 let fileInfo = await LocalFileManager.shared.loadImportFileInfo(url: url)

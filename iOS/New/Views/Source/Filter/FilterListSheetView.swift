@@ -114,8 +114,6 @@ struct FilterListSheetView: View {
     @ToolbarContentBuilder
     var toolbarContentiOS26: some ToolbarContent {
         toolbarContent
-
-        ToolbarSpacer(.flexible, placement: .bottomBar)
     }
 }
 

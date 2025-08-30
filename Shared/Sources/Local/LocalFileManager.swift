@@ -9,6 +9,7 @@ import AidokuRunner
 import CoreData
 import Foundation
 import ZIPFoundation
+import PDFKit
 
 #if os(macOS)
 import AppKit
@@ -20,7 +21,7 @@ actor LocalFileManager {
 
     private var lastScanTime = Date.distantPast
 
-    static let allowedFileExtensions = Set(["cbz", "zip"])
+    static let allowedFileExtensions = Set(["cbz", "zip", "pdf"])
     static let allowedImageExtensions = Set(["jpg", "jpeg", "png", "webp"])
 
     private var localFolderFileDescriptor: CInt?
@@ -55,6 +56,34 @@ extension LocalFileManager {
             return nil
         }
 
+        if pathExtension == "pdf" {
+            guard let doc = PDFDocument(url: url) else { return nil }
+            let count = doc.pageCount
+            guard count > 0 else { return nil }
+            var previews: [PlatformImage] = []
+            let maxSide: CGFloat = 1200
+            for i in 0..<min(count, 3) {
+                guard let page = doc.page(at: i) else { continue }
+                #if os(iOS)
+                let size = CGSize(width: maxSide, height: maxSide)
+                let img = page.thumbnail(of: size, for: .mediaBox)
+                previews.append(img)
+                #else
+                if let cg = page.thumbnail(of: CGSize(width: maxSide, height: maxSide), for: .mediaBox).cgImage(forProposedRect: nil, context: nil, hints: nil) {
+                    previews.append(PlatformImage(cgImage: cg, size: .zero))
+                }
+                #endif
+            }
+            return ImportFileInfo(
+                url: url,
+                previewImages: previews,
+                name: url.lastPathComponent,
+                pageCount: count,
+                fileType: .pdf
+            )
+        }
+
+        // ZIP/CBZ path
         // read zip file
         let archive: Archive
         do {
@@ -91,11 +120,7 @@ extension LocalFileManager {
             }
         }
 
-        let fileType = switch pathExtension {
-            case "cbz": LocalFileType.cbz
-            case "zip": LocalFileType.zip
-            default: LocalFileType.zip
-        }
+        let fileType = (pathExtension == "cbz") ? LocalFileType.cbz : LocalFileType.zip
 
         return ImportFileInfo(
             url: url,
@@ -195,7 +220,58 @@ extension LocalFileManager {
             }
         }
 
-        // read zip file
+        // If PDF, convert to a temporary CBZ with PNG pages
+        if url.pathExtension.lowercased() == "pdf" {
+            do {
+                guard let pdf = PDFDocument(url: url) else { throw LocalFileManagerError.cannotReadArchive }
+                // create temp cbz
+                let tempCbz = (FileManager.default.temporaryDirectory ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!)
+                    .appendingPathComponent(UUID().uuidString)
+                    .appendingPathExtension("cbz")
+                guard let archive   = try? Archive(url: tempCbz, accessMode: .create) else {
+                    throw LocalFileManagerError.cannotReadArchive
+                }
+                let maxSide: CGFloat = 2000
+                for i in 0..<pdf.pageCount {
+                    autoreleasepool {
+                        if let page = pdf.page(at: i) {
+                            #if os(iOS)
+                            let image = page.thumbnail(of: CGSize(width: maxSide, height: maxSide), for: .mediaBox)
+                            guard let data = image.pngData() else { return }
+                            #else
+                            let img = page.thumbnail(of: CGSize(width: maxSide, height: maxSide), for: .mediaBox)
+                            guard let tiff = img.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff), let data = rep.representation(using: .png, properties: [:]) else { return }
+                            #endif
+                            let name = String(format: "%04d.png", i + 1)
+                            do {
+                                try archive.addEntry(
+                                    with: name,
+                                    type: .file,
+                                    uncompressedSize: Int64(data.count),
+                                    compressionMethod: .deflate,
+                                    bufferSize: Int(UInt16.max),
+                                    progress: nil,
+                                    provider: { position, size in
+                                        let start = Int(position)
+                                        let end = start + size
+                                        if start >= data.count { return Data() }
+                                        return data.subdata(in: start..<(min(end, data.count)))
+                                    }
+                                )
+                            } catch {
+                                // skip a page if writing fails; continue
+                                LogManager.logger.error("Failed to add page to CBZ: \(error)")
+                            }
+                        }
+                    }
+                }
+                // replace url with cbz for further processing
+                url = tempCbz
+                shouldRemoveUrl = true
+            }
+        }
+
+        // read zip/cbz file
         let archive: Archive
         do {
             archive = try Archive(url: url, accessMode: .read)
@@ -482,7 +558,7 @@ extension LocalFileManager {
                 at: folder,
                 includingPropertiesForKeys: nil,
                 options: .skipsHiddenFiles
-            ))?.filter { Self.allowedFileExtensions.contains($0.pathExtension.lowercased()) } ?? []
+            ))?.filter { ["cbz","zip"].contains($0.pathExtension.lowercased()) } ?? []
             let mangaId = folder.lastPathComponent
             // add cbz files as chapters
             for cbzFile in cbzFiles {
@@ -502,7 +578,7 @@ extension LocalFileManager {
                 at: folder,
                 includingPropertiesForKeys: nil,
                 options: .skipsHiddenFiles
-            ))?.filter { Self.allowedFileExtensions.contains($0.pathExtension.lowercased()) } ?? []
+            ))?.filter { ["cbz","zip"].contains($0.pathExtension.lowercased()) } ?? []
             let cbzFileNames = Set(cbzFiles.map { $0.lastPathComponent })
 
             let dbChapterFileNames = await LocalFileDataManager.shared.removeMissingChapters(

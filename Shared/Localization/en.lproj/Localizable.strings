@@ -156,7 +156,7 @@
 "IMPORT" = "Import";
 "IMPORT_FILE" = "Import File";
 "LOCAL_FILE_IMPORT" = "Local File Import";
-"LOCAL_FILE_IMPORT_TEXT" = "Import a CBZ or ZIP file containing images to read.";
+"LOCAL_FILE_IMPORT_TEXT" = "Import a CBZ, ZIP, or PDF file containing images to read.";
 "CHAPTER_TITLE" = "Chapter Title";
 "SERIES_TITLE" = "Series Title";
 "DESCRIPTION" = "Description";
@@ -174,6 +174,7 @@
 "1_PAGE" = "1 page";
 "CBZ_NAME" = "Comic Book Zip Archive";
 "ZIP_NAME" = "Zip Archive";
+"PDF_NAME" = "PDF";
 
 // Komga
 "KOMGA" = "Komga";
@@ -429,7 +430,7 @@
 "IMPORT_FAIL" = "Import Failed";
 "BACKUP_IMPORT_FAIL_TEXT" = "Failed to save backup. Please ensure that your backup is in the proper format.";
 "SOURCE_IMPORT_FAIL_TEXT" = "Failed to import source. Please ensure that your aix file is valid.";
-"FILE_IMPORT_FAIL_TEXT" = "Failed to import file. Please ensure it is a valid CBZ or ZIP archive that contains images.";
+"FILE_IMPORT_FAIL_TEXT" = "Failed to import file. Please ensure it is a valid CBZ, ZIP, or PDF containing images.";
 "EXPORT" = "Export";
 "RESTORE" = "Restore";
 "LOGS" = "Logs";

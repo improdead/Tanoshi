@@ -227,6 +227,10 @@ extension Source {
     }
 }
 
+// Allow use across concurrency domains where needed.
+// The internal state is actor-isolated via SourceActor usage.
+extension Source: @unchecked Sendable {}
+
 // MARK: - Get Functions
 extension Source {
 
