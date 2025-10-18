@@ -27,7 +27,6 @@ import hashlib
 import pathlib
 import subprocess
 import sys
-import hashlib
 
 import modal
 from fastapi import FastAPI, HTTPException, Request
@@ -35,7 +34,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from starlette.responses import StreamingResponse
 from fastapi.responses import HTMLResponse
-from starlette.datastructures import Headers
 
 try:
     # Optional Redis (async) client for job state + rate limiting
@@ -72,6 +70,8 @@ image = (
         "torch==2.3.1",
         "torchaudio==2.3.1",
     )
+    # Persist HF downloads to the models volume to avoid cold re-downloads
+    .env({"TRANSFORMERS_CACHE": "/models/hf", "HF_HOME": "/models/hf"})
 )
 
 models_volume = modal.Volume.from_name(os.getenv("MODELS_VOLUME", "tanoshi-models"), create_if_missing=True)
@@ -134,6 +134,17 @@ def download_models() -> None:
                 subprocess.run(["curl", "-L", ref_url, "-o", str(ref_path)], check=True)
             except Exception:
                 pass
+
+    # 4) Pre-cache MAGI v2 weights into HF cache (optional)
+    try:
+        from transformers import AutoModel  # type: ignore
+        rev = os.getenv("MAGI_REVISION")
+        if rev:
+            AutoModel.from_pretrained("ragavsachdeva/magiv2", trust_remote_code=True, revision=rev)
+        else:
+            AutoModel.from_pretrained("ragavsachdeva/magiv2", trust_remote_code=True)
+    except Exception:
+        pass
 
 
 @app.cls(
@@ -1140,7 +1151,11 @@ async def job_events(job_id: str, request: Request):
                 yield b": keep-alive\n\n"
                 last_heartbeat = now
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @api.get("/v1/narration/jobs/{job_id}/snapshot")
@@ -1453,7 +1468,11 @@ async def voice_events(voice_id: str, request: Request):
             if now - last >= 10:
                 yield b": keep-alive\n\n"
                 last = now
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # Expose FastAPI via Modal as ASGI app (Modal 1.1.x)

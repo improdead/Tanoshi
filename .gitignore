@@ -1,0 +1,64 @@
+# macOS / Finder
+.DS_Store
+
+# Xcode / Swift
+build/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserdatad/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# CocoaPods (not used, but ignore if present)
+Pods/
+
+# Carthage (not used, but ignore if present)
+Carthage/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# iOS artifacts
+Payload/
+*.ipa
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.python-version
+.venv/
+venv/
+env/
+
+# Python tooling
+.mypy_cache/
+.pytest_cache/
+coverage.xml
+htmlcov/
+
+# Backend env/config
+backend/.env
+.env
+
+# Editors/IDE
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Modal volumes (local mounts, if any)
+/data/
+/models/

@@ -705,3 +705,42 @@
     - WARP.md (organized guidance; implementation status; SSE/Redis/TTL notes)
     - iOS/UI/Reader/ReaderToolbarView.swift (hosts Listen toggle)
         - iOS/UI/Reader/ReaderViewController.swift (toggle wiring, uploads, SSE playback, ad gate)
+
+  ---
+  Modal setup audit and changes (Oct 2025)
+
+  What I changed
+  - Cleaned imports in backend/modal_app.py:
+    - Removed a duplicate `import hashlib` and an unused `Headers` import.
+  - Persisted Hugging Face cache to the models volume:
+    - Set `TRANSFORMERS_CACHE` and `HF_HOME` to `/models/hf` on the Modal image. This avoids re-downloading MAGI on every cold start.
+    - Extended `download_models()` to pre-cache `ragavsachdeva/magiv2` into the HF cache (optional, best-effort).
+  - Hardened SSE delivery:
+    - Added `Cache-Control: no-cache` and `X-Accel-Buffering: no` headers to SSE endpoints to minimize proxy buffering and improve reliability.
+  - Left the GPU topology intact for now:
+    - The ASGI app still runs on `gpu="L4"`. A separate `NarrationService` GPU class remains available for future split of web vs GPU workers.
+  - Repo hygiene:
+    - Added a root `.gitignore` suitable for Swift + Python + Modal.
+    - Added "what do I need.md" with open questions and decisions to make.
+
+  Pseudocode (SSE with anti-buffering headers)
+  ```
+  @api.get("/v1/narration/jobs/{job_id}/events")
+  async def events(job_id):
+      async def event_stream():
+          # emit initial snapshot, then loop queue/pubsub → yield bytes
+          ...
+      return StreamingResponse(
+          event_stream(),
+          media_type="text/event-stream",
+          headers={
+              "Cache-Control": "no-cache",
+              "X-Accel-Buffering": "no",
+          },
+      )
+  ```
+
+  Notes
+  - The Modal image remains Debian slim with ffmpeg/espeak-ng/torch/transformers installed; GPU utilization is optional (code runs on CPU if CUDA isn’t available).
+  - `download_models()` is idempotent and safe to run manually with `modal run backend/modal_app.py::download_models`.
+  - See "what do I need.md" for choices we should finalize (Redis plan, SoVITS pin, CDN, limits).
